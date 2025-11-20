@@ -1,0 +1,92 @@
+{% extends "complexes/base.html" %}
+
+{% block content %}
+<h3 class="page-title mb-3">Заявки на ремонт ({{ staff.complex.name }})</h3>
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card card-elevated p-3 h-100">
+      <h6 class="mb-3">Нові</h6>
+      {% if tickets_new %}
+        <div class="list-group list-group-flush">
+        {% for t in tickets_new %}
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>Кв. {{ t.apartment.number }}</strong>
+                <div class="small text-muted">{{ t.owner.name }}</div>
+              </div>
+              <small class="text-muted">{{ t.created_at|date:"d.m.Y H:i" }}</small>
+            </div>
+            <div class="mt-1">{{ t.description|linebreaksbr }}</div>
+            <form method="post" action="{% url 'ticket_take' t.pk %}" class="mt-2">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-outline-primary btn-pill">Взяти в роботу</button>
+            </form>
+          </div>
+        {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">Немає нових заявок.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card card-elevated p-3 h-100">
+      <h6 class="mb-3">В роботі</h6>
+      {% if tickets_in_progress %}
+        <div class="list-group list-group-flush">
+        {% for t in tickets_in_progress %}
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>Кв. {{ t.apartment.number }}</strong>
+                <div class="small text-muted">{{ t.owner.name }}</div>
+              </div>
+              <small class="text-muted">{{ t.created_at|date:"d.m.Y H:i" }}</small>
+            </div>
+            <div class="mt-1">{{ t.description|linebreaksbr }}</div>
+            <form method="post" action="{% url 'ticket_done' t.pk %}" class="mt-2 me-1 d-inline">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-success btn-pill">Завершити</button>
+            </form>
+          </div>
+        {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">Немає заявок в роботі.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card card-elevated p-3 h-100">
+      <h6 class="mb-3">Виконано</h6>
+      {% if tickets_done %}
+        <div class="list-group list-group-flush">
+        {% for t in tickets_done %}
+          <div class="list-group-item">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>Кв. {{ t.apartment.number }}</strong>
+                <div class="small text-muted">{{ t.owner.name }}</div>
+              </div>
+              <small class="text-muted">{{ t.updated_at|date:"d.m.Y H:i" }}</small>
+            </div>
+            <div class="mt-1">{{ t.description|linebreaksbr }}</div>
+            <form method="post" action="{% url 'ticket_delete' t.pk %}" class="mt-2">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-outline-danger btn-pill">Видалити</button>
+            </form>
+          </div>
+        {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">Немає виконаних заявок.</div>
+      {% endif %}
+    </div>
+  </div>
+ </div>
+{% endblock %}
+

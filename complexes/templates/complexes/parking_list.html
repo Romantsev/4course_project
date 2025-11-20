@@ -1,0 +1,123 @@
+{% extends "complexes/base.html" %}
+{% block title %}Паркінг{% endblock %}
+
+{% block content %}
+<h3>Зони паркінгу</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Тип</th>
+            <th>Розташування</th>
+            <th>Під'їзд</th>
+            <th>Дії</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for z in zones %}
+        <tr>
+            <td>{{ z.parking_zone_id }}</td>
+            <td>{{ z.type }}</td>
+            <td>{{ z.location }}</td>
+            <td>{{ z.entrance }}</td>
+            <td>
+                {% if zone_form %}
+                <a href="{% url 'parking_zone_edit' z.pk %}" class="btn btn-sm btn-primary">Редагувати</a>
+                <a href="{% url 'parking_zone_delete' z.pk %}" class="btn btn-sm btn-danger">Видалити</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">Зон паркінгу не знайдено.</td></tr>
+        {% endfor %}
+    </tbody>
+    </table>
+
+{% if zone_form %}
+<h5>Додати паркінг-зону</h5>
+<form method="post" class="card p-3">
+    {% csrf_token %}
+    <input type="hidden" name="add_zone" value="1">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label" for="id_zone_type">Тип</label>
+            {{ zone_form.type }}
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="id_zone_location">Розташування</label>
+            {{ zone_form.location }}
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="id_zone_entrance">Під'їзд</label>
+            {{ zone_form.entrance }}
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-success w-100">Додати</button>
+        </div>
+    </div>
+    </form>
+{% endif %}
+
+<hr>
+
+<h3>Паркомісця</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Статус</th>
+            <th>Зона</th>
+            <th>Власник</th>
+            <th>Дії</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in spots %}
+        <tr>
+            <td>{{ s.number }}</td>
+            <td>{{ s.status }}</td>
+            <td>{{ s.parking_zone_id }}</td>
+            <td>{{ s.owner.name }}</td>
+            <td>
+                {% if spot_form %}
+                <a href="{% url 'parking_spot_edit' s.pk %}" class="btn btn-sm btn-primary">Редагувати</a>
+                <a href="{% url 'parking_spot_delete' s.pk %}" class="btn btn-sm btn-danger">Видалити</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">Паркомісць не знайдено.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if spot_form %}
+<h5>Додати паркомісце</h5>
+<form method="post" class="card p-3">
+    {% csrf_token %}
+    <input type="hidden" name="add_spot" value="1">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label" for="id_spot_number">Номер</label>
+            {{ spot_form.number }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" for="id_spot_status">Статус</label>
+            {{ spot_form.status }}
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="id_spot_zone">Зона</label>
+            {{ spot_form.parking_zone }}
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="id_spot_owner">Власник</label>
+            {{ spot_form.owner }}
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-success w-100">Додати</button>
+        </div>
+    </div>
+</form>
+{% endif %}
+{% endblock %}
+

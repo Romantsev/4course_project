@@ -1,0 +1,102 @@
+{% extends "complexes/base.html" %}
+{% block title %}Відвідувачі{% endblock %}
+
+{% block content %}
+<h3>Відвідувачі{% if complex %} — {{ complex.name }}{% endif %}</h3>
+
+{# Фільтр за ЖК (видно суперюзеру) #}
+{% if complexes %}
+<form method="get" id="filter-form" class="mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col-auto">
+      <label class="form-label mb-0" for="id_complex_filter">ЖК</label>
+      <select id="id_complex_filter" name="complex" class="form-select">
+        <option value="">--- Всі ЖК ---</option>
+        {% for c in complexes %}
+          <option value="{{ c.complex_id }}" {% if selected_complex == c.complex_id %}selected{% endif %}>
+            {{ c.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+</form>
+
+<script>
+document.getElementById('id_complex_filter').addEventListener('change', function() {
+  document.getElementById('filter-form').submit();
+});
+</script>
+{% endif %}
+
+<h5 class="mt-3">Додати відвідувача</h5>
+<form method="post" class="card p-3 mb-3">
+  {% csrf_token %}
+  <div class="row g-2 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label">ПІБ</label>
+      {{ form.fullname }}
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Мета візиту</label>
+      {{ form.purpose }}
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Квартира</label>
+      {{ form.apartment }}
+    </div>
+    <div class="col-md-1">
+      <button type="submit" class="btn btn-success w-100">Додати</button>
+    </div>
+  </div>
+
+  {{ form.non_field_errors }}
+  {% for f in form %}
+    {% for e in f.errors %}
+      <div class="text-danger small">{{ e }}</div>
+    {% endfor %}
+  {% endfor %}
+</form>
+
+<h5>Останні відвідування</h5>
+<table class="table table-striped align-middle">
+  <thead>
+    <tr>
+      <th>Час</th>
+      <th>ПІБ</th>
+      <th>Мета</th>
+      <th>Квартира</th>
+      <th>Додав</th>
+      <th>Дії</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for v in visitors %}
+    <tr>
+      <td>{{ v.created_at|date:"Y-m-d H:i" }}</td>
+      <td>{{ v.fullname }}</td>
+      <td>{{ v.purpose }}</td>
+      <td>
+        {% if v.apartment %}
+          {% if v.apartment.entrance and v.apartment.entrance.building %}
+            Під'їзд {{ v.apartment.entrance.number }}, Буд. {{ v.apartment.entrance.building.number }}, 
+          {% endif %}
+          Кв. {{ v.apartment.number }}
+          {% if v.apartment.entrance and v.apartment.entrance.building and v.apartment.entrance.building.complex %}
+            — {{ v.apartment.entrance.building.complex.name }}
+          {% endif %}
+        {% else %}
+          -
+        {% endif %}
+      </td>
+      <td>{% if v.added_by %}{{ v.added_by.username }}{% else %}-{% endif %}</td>
+      <td class="text-nowrap">
+        <a href="{% url 'visitor_delete' v.pk %}" class="btn btn-sm btn-outline-danger">Видалити</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">Ще не зафіксовано відвідувачів.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

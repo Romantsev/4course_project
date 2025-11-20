@@ -1,0 +1,60 @@
+{% extends "complexes/base.html" %}
+{% block content %}
+<h3 class="mb-3">{{ title }}</h3>
+<form method="post" class="card p-3">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+
+  <div class="row g-2">
+    <div class="col-md-4">
+      <label class="form-label">Логін</label>
+      {{ form.username }}
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Email</label>
+      {{ form.email }}
+    </div>
+  </div>
+
+  {% if form.complex %}
+  <div class="mt-2">
+    <label class="form-label">Житловий комплекс</label>
+    {{ form.complex }}
+  </div>
+  {% endif %}
+
+  {% if form.owner %}
+  <div class="mt-2">
+    <label class="form-label">Власник</label>
+    {{ form.owner }}
+  </div>
+  {% endif %}
+
+  {% if form.staff %}
+  <div class="mt-2">
+    <label class="form-label">Співробітник</label>
+    {{ form.staff }}
+  </div>
+  {% endif %}
+
+  {% if form.access_type %}
+  <div class="mt-2">
+    <label class="form-label">Права доступу</label>
+    {{ form.access_type }}
+  </div>
+  {% endif %}
+
+  <div class="row g-2 mt-2">
+    <div class="col-md-6">
+      <label class="form-label">Пароль</label>
+      {{ form.password1 }}
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Підтвердження пароля</label>
+      {{ form.password2 }}
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary mt-3">Створити</button>
+</form>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "complexes/base.html" %}
+{% block title %}Житлові комплекси{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-baseline mb-3">
+  <div>
+    <h2 class="page-title mb-1">Житлові комплекси</h2>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card card-elevated p-3">
+      <div class="mb-3 position-relative">
+        <form method="get" action="">
+          <input type="search" name="q" value="{{ q }}" class="form-control search-input" placeholder="🔍Пошук по назві або адресі">
+        </form>
+      </div>
+
+      {% if complexes %}
+      <div class="row g-3">
+        {% for c in complexes %}
+        <div class="col-md-6">
+          <a href="{% url 'complex_detail' c.pk %}">
+            <div class="complex-card p-3 h-100">
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <h5 class="mb-0">{{ c.name }}</h5>
+                <span class="complex-badge">ID #{{ c.complex_id }}</span>
+              </div>
+              <div class="text-muted small mb-2">{{ c.address }}</div>
+              {% if c.management %}
+              <div class="small"><span class="text-muted">Керуюча:</span> <span class="fw-semibold">{{ c.management }}</span></div>
+              {% endif %}
+              {% if c.contact %}
+              <div class="small text-muted">Контакт: {{ c.contact }}</div>
+              {% endif %}
+              <div class="mt-2 d-flex justify-content-between align-items-center small text-muted">
+                <span>Будинків: {{ c.buildings.count }}</span>
+                <span class="text-primary">Перейти</span>
+              </div>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">Нічого не знайдено. Спробуйте інший запит або створіть перший комплекс у формі праворуч.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card card-elevated p-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="right-panel-title mb-0">Новий комплекс</h5>
+        <span class="badge rounded-pill text-bg-primary">+ Додати</span>
+      </div>
+      <p class="subtitle mb-3">Швидке створення комплексу. Вкажіть назву, адресу, керуючу компанію та контакти.</p>
+
+      <form method="post" class="mt-1">
+        {% csrf_token %}
+        <div class="mb-2"><label class="form-label">Назва</label>{{ form.name }}</div>
+        <div class="mb-2"><label class="form-label">Адреса</label>{{ form.address }}</div>
+        <div class="mb-2"><label class="form-label">Керуюча компанія</label>{{ form.management }}</div>
+        <div class="mb-3"><label class="form-label">Контакт</label>{{ form.contact }}</div>
+        <button class="btn btn-primary w-100 btn-pill" type="submit">Створити</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

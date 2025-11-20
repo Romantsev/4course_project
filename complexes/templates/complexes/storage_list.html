@@ -1,0 +1,99 @@
+{% extends "complexes/base.html" %}
+{% block title %}Комірки{% endblock %}
+
+{% block content %}
+<h3>Комірки</h3>
+
+<!-- Фільтр ЖК -->
+<form method="get" class="row mb-3">
+    <div class="col-md-4">
+        <label class="form-label">ЖК:</label>
+        <select name="complex" class="form-select" onchange="this.form.submit()">
+            <option value="">Всі ЖК</option>
+            {% for c in complexes %}
+                <option value="{{ c.pk }}" {% if selected_complex_id == c.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ c.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+</form>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>№</th>
+            <th>Статус</th>
+            <th>Розташування</th>
+            <th>Квартира</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in storages %}
+        <tr>
+            <td>{{ s.number }}</td>
+            <td>{{ s.get_status_display }}</td>
+            <td>{{ s.location }}</td>
+            <td>
+                {% if s.apartment %}
+                    Кв-{{ s.apartment.number }}
+                    (Буд. {{ s.apartment.entrance.building.number }},
+                    Під'їзд {{ s.apartment.entrance.number }})
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+            <td>
+                <a href="{% url 'storage_edit' s.pk %}" class="btn btn-sm btn-primary">Ред.</a>
+                <a href="{% url 'storage_delete' s.pk %}" class="btn btn-sm btn-danger">Видалити</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">Комірок поки немає.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h4>Додати комірку</h4>
+<form method="post" class="card p-3">
+    {% csrf_token %}
+    <div class="row g-3 align-items-end">
+
+        <div class="col-md-3">
+            <label for="id_number" class="form-label">Номер:</label>
+            <input type="text" name="number" id="id_number" class="form-control" required>
+        </div>
+
+        <div class="col-md-3">
+            <label for="id_location" class="form-label">Розташування:</label>
+            <input type="text" name="location" id="id_location" class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <label for="id_status" class="form-label">Статус:</label>
+            <select name="status" id="id_status" class="form-select">
+                <option value="free" selected>Вільна</option>
+                <option value="occupied">Зайнята</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="id_apartment" class="form-label">Квартира (необов'язково):</label>
+            <select name="apartment" id="id_apartment" class="form-select">
+                <option value="">---------</option>
+                {% for a in apartments %}
+                    <option value="{{ a.pk }}">
+                        Кв-{{ a.number }} (Буд. {{ a.entrance.building.number }}, Під'їзд {{ a.entrance.number }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+    </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-success">Додати</button>
+    </div>
+</form>
+{% endblock %}

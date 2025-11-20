@@ -1,0 +1,33 @@
+{% extends "accounts/base_accounts.html" %}
+
+{% block accounts_content %}
+<h3>Super Admin панель</h3>
+<p class="text-muted">Керування адміністраторами житлових комплексів.</p>
+
+<a href="{% url 'accounts:create_complex_admin' %}" class="btn btn-primary mb-3">
+    + Створити адміністратора ЖК
+</a>
+
+<table class="table table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Користувач</th>
+            <th>ЖК</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ca in complex_admins %}
+        <tr>
+            <td>{{ ca.user.username }}</td>
+            <td>{{ ca.complex.name }}</td>
+            <td class="text-nowrap">
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'accounts:edit_complex_admin' ca.pk %}">Редагувати</a>
+                <a class="btn btn-sm btn-outline-danger" href="{% url 'accounts:delete_complex_admin' ca.pk %}">Видалити</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2">Поки немає адмінів ЖК.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

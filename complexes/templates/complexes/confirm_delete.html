@@ -1,0 +1,13 @@
+{% extends "complexes/base.html" %}
+
+{% block title %}Підтвердження видалення{% endblock %}
+
+{% block content %}
+<h3>{{ title }}</h3>
+<p>Ви впевнені?</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Так, видалити</button>
+    <a href="javascript:history.back()" class="btn btn-secondary">Скасувати</a>
+</form>
+{% endblock %}

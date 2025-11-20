@@ -1,0 +1,52 @@
+{% extends "complexes/base.html" %}
+{% block title %}Власники{% endblock %}
+
+{% block content %}
+<h3>Власники</h3>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>ПІБ</th>
+      <th>Телефон</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for o in owners %}
+    <tr>
+      <td>{{ o.name }}</td>
+      <td>{{ o.phone }}</td>
+      <td>
+        {% if user.is_superuser %}
+        <a href="{% url 'owner_edit' o.owner_id %}" class="btn btn-sm btn-primary">Редагувати</a>
+        <a href="{% url 'owner_delete' o.owner_id %}" class="btn btn-sm btn-danger">Видалити</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">Власників поки не створено.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if form %}
+<h4>Додати власника</h4>
+<form method="post" class="card p-3">
+  {% csrf_token %}
+  <div class="row g-2 align-items-end">
+    <div class="col-md-5">
+      <label class="form-label" for="id_owner_name">ПІБ</label>
+      {{ form.name }}
+    </div>
+    <div class="col-md-5">
+      <label class="form-label" for="id_owner_phone">Телефон</label>
+      {{ form.phone }}
+    </div>
+    <div class="col-md-2">
+      <button class="btn btn-success w-100" type="submit">Додати</button>
+    </div>
+  </div>
+</form>
+{% endif %}
+{% endblock %}
+

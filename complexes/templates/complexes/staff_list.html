@@ -1,0 +1,67 @@
+{% extends "complexes/base.html" %}
+{% block title %}Персонал{% endblock %}
+
+{% block content %}
+<h3>Персонал</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ПІБ</th>
+            <th>Роль</th>
+            <th>ЖК</th>
+            <th>Графік</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in staff_list %}
+        <tr>
+            <td>{{ s.fullname }}</td>
+            <td>{{ s.role }}</td>
+            <td>{{ s.complex.name }}</td>
+            <td>{{ s.work_schedule }}</td>
+            <td>
+                {% if user.is_superuser or user.complex_admin_profile %}
+                <a href="{% url 'staff_edit' s.pk %}" class="btn btn-sm btn-primary">Редагувати</a>
+                <a href="{% url 'staff_delete' s.pk %}" class="btn btn-sm btn-danger">Видалити</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">Співробітників не знайдено.</td></tr>
+        {% endfor %}
+    </tbody>
+    </table>
+
+{% if form %}
+<h4>Додати співробітника</h4>
+<form method="post" class="card p-3">
+    {% csrf_token %}
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label" for="id_staff_fullname">ПІБ</label>
+            {{ form.fullname }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" for="id_staff_role">Роль</label>
+            {{ form.role }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" for="id_staff_contact">Контакти</label>
+            {{ form.contact }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" for="id_staff_schedule">Графік</label>
+            {{ form.work_schedule }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" for="id_staff_complex">ЖК</label>
+            {{ form.complex }}
+        </div>
+        <div class="col-md-1">
+            <button class="btn btn-success w-100" type="submit">Додати</button>
+        </div>
+    </div>
+</form>
+{% endif %}
+{% endblock %}

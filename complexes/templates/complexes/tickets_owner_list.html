@@ -1,0 +1,30 @@
+{% extends "complexes/base.html" %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="page-title mb-0">Мої заявки на ремонт</h3>
+    <a href="{% url 'ticket_create' %}" class="btn btn-primary btn-pill">Створити заявку</a>
+  </div>
+
+<div class="card card-elevated p-3">
+  {% if tickets %}
+    <div class="list-group list-group-flush">
+      {% for t in tickets %}
+        <div class="list-group-item">
+          <div class="d-flex w-100 justify-content-between">
+            <h6 class="mb-1">Кв. {{ t.apartment.number }} • {{ t.apartment.entrance.building.complex.name }}</h6>
+            <small class="text-muted">{{ t.created_at|date:"d.m.Y H:i" }}</small>
+          </div>
+          <p class="mb-1">{{ t.description|linebreaksbr }}</p>
+          <span class="badge rounded-pill bg-{% if t.status == 'new' %}secondary{% elif t.status == 'in_progress' %}warning{% else %}success{% endif %}">
+            {% if t.status == 'new' %}Нова{% elif t.status == 'in_progress' %}В роботі{% else %}Виконано{% endif %}
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">Поки немає заявок. Ви можете створити першу.</div>
+  {% endif %}
+</div>
+{% endblock %}
+
