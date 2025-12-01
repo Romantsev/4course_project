@@ -53,11 +53,11 @@ BEGIN
     SELECT 'staff','staff_id' UNION ALL
     SELECT 'parking_zone','parking_zone_id' UNION ALL
     SELECT 'parking_spot','spot_id' UNION ALL
-    SELECT 'storage_room','id'
+    SELECT 'complexes_storageroom','id'
   ) LOOP
     BEGIN
       EXECUTE format(
-        'SELECT setval(pg_get_serial_sequence(''%1$s'', ''%2$s''), COALESCE((SELECT MAX(%2$I) FROM %1$s), 0))',
+        'SELECT setval(pg_get_serial_sequence(''%1$s'', ''%2$s''), GREATEST(COALESCE((SELECT MAX(%2$I) FROM %1$s), 1), 1))',
         rec.t, rec.c
       );
     EXCEPTION WHEN undefined_function OR undefined_table THEN

@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: course_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: django_app
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn residence_manager.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=b+3_opk%7fmwo3y_$*h_a_+bh1sh@wixdm@0j13ke9scimgedt
+      - DB_NAME=course_db
+      - DB_USER=postgres
+      - DB_PASSWORD=12345
+      - DB_HOST=db
+      - DB_PORT=5432
+
+volumes:
+  postgres_data:

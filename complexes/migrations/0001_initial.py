@@ -26,7 +26,6 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'apartment',
                 'ordering': ['entrance', 'floor', 'number'],
-                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -39,7 +38,6 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'building',
                 'ordering': ['number'],
-                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -51,7 +49,6 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'entrance',
                 'ordering': ['number'],
-                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -64,7 +61,6 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'owner',
                 'ordering': ['name'],
-                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -76,7 +72,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'parking_spot',
-                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -88,7 +83,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'parking_zone',
-                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -102,7 +96,6 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'resident',
                 'ordering': ['fullname'],
-                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -117,7 +110,6 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'residential_complex',
                 'ordering': ['name'],
-                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -132,7 +124,6 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'staff',
                 'ordering': ['fullname'],
-                'managed': False,
             },
         ),
         migrations.CreateModel(
@@ -145,7 +136,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'storage_room',
-                'managed': False,
             },
         ),
         migrations.CreateModel(

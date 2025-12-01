@@ -9,7 +9,6 @@ class ResidentialComplex(models.Model):
     contact = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'residential_complex'
         ordering = ['name']
 
@@ -29,7 +28,6 @@ class Building(models.Model):
     )
 
     class Meta:
-        managed = False
         db_table = 'building'
         ordering = ['number']
 
@@ -48,7 +46,6 @@ class Entrance(models.Model):
     )
 
     class Meta:
-        managed = False
         db_table = 'entrance'
         ordering = ['number']
 
@@ -62,7 +59,6 @@ class Owner(models.Model):
     phone = models.TextField(blank=True, null=True)
 
     class Meta:
-        managed = False
         db_table = 'owner'
         ordering = ['name']
 
@@ -92,7 +88,6 @@ class Apartment(models.Model):
     )
 
     class Meta:
-        managed = False
         db_table = 'apartment'
         ordering = ['entrance', 'floor', 'number']
 
@@ -116,7 +111,6 @@ class Resident(models.Model):
     )
 
     class Meta:
-        managed = False
         db_table = 'resident'
         ordering = ['fullname']
 
@@ -138,7 +132,6 @@ class Staff(models.Model):
     )
 
     class Meta:
-        managed = False
         db_table = 'staff'
         ordering = ['fullname']
 
@@ -158,7 +151,6 @@ class ParkingZone(models.Model):
     )
 
     class Meta:
-        managed = False
         db_table = 'parking_zone'
 
     def __str__(self):
@@ -183,7 +175,6 @@ class ParkingSpot(models.Model):
     )
 
     class Meta:
-        managed = False
         db_table = 'parking_spot'
 
     def __str__(self):
@@ -210,8 +201,7 @@ class StorageRoom(models.Model):
     )
 
     class Meta:
-        managed = False
-        db_table = 'storage_room'
+        db_table = 'complexes_storageroom'
 
     def __str__(self):
         base = f"Комірка {self.number}"

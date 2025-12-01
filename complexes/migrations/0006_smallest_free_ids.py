@@ -1,7 +1,7 @@
 from django.db import migrations
 
 
-SQL_UP = r"""
+SQL_UP = """
 -- Generic function to compute the smallest free positive integer id for a table/column.
 CREATE OR REPLACE FUNCTION public.next_smallest_free_id(p_table regclass, p_col name)
 RETURNS bigint
@@ -92,14 +92,14 @@ BEGIN
          || 'FOR EACH ROW EXECUTE FUNCTION public.assign_smallest_free_id(''spot_id'')';
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname='storage_room_smallest_id_trg') THEN
-    EXECUTE 'CREATE TRIGGER storage_room_smallest_id_trg BEFORE INSERT ON storage_room\n'
+    EXECUTE 'CREATE TRIGGER storage_room_smallest_id_trg BEFORE INSERT ON complexes_storageroom\n'
          || 'FOR EACH ROW EXECUTE FUNCTION public.assign_smallest_free_id(''id'')';
   END IF;
 END $$;
 """
 
 
-SQL_DOWN = r"""
+SQL_DOWN = """
 -- Drop triggers (if present)
 DROP TRIGGER IF EXISTS residential_complex_smallest_id_trg ON residential_complex;
 DROP TRIGGER IF EXISTS building_smallest_id_trg ON building;
@@ -110,7 +110,7 @@ DROP TRIGGER IF EXISTS resident_smallest_id_trg ON resident;
 DROP TRIGGER IF EXISTS staff_smallest_id_trg ON staff;
 DROP TRIGGER IF EXISTS parking_zone_smallest_id_trg ON parking_zone;
 DROP TRIGGER IF EXISTS parking_spot_smallest_id_trg ON parking_spot;
-DROP TRIGGER IF EXISTS storage_room_smallest_id_trg ON storage_room;
+DROP TRIGGER IF EXISTS storage_room_smallest_id_trg ON complexes_storageroom;
 -- Drop functions
 DROP FUNCTION IF EXISTS public.assign_smallest_free_id() CASCADE;
 DROP FUNCTION IF EXISTS public.next_smallest_free_id(regclass, name) CASCADE;
