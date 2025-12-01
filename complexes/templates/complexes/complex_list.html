@@ -62,7 +62,17 @@
         <div class="mb-2"><label class="form-label">Назва</label>{{ form.name }}</div>
         <div class="mb-2"><label class="form-label">Адреса</label>{{ form.address }}</div>
         <div class="mb-2"><label class="form-label">Керуюча компанія</label>{{ form.management }}</div>
-        <div class="mb-3"><label class="form-label">Контакт</label>{{ form.contact }}</div>
+       <div class="mb-3">
+    <label class="form-label">Контакт</label>
+    {{ form.contact }}
+
+    {% if form.contact.errors %}
+        <div class="text-danger small mt-1">
+            {{ form.contact.errors.0 }}
+        </div>
+    {% endif %}
+</div>
+
         <button class="btn btn-primary w-100 btn-pill" type="submit">Створити</button>
       </form>
     </div>

@@ -3,6 +3,30 @@ from .models import (
     ResidentialComplex, Building, Entrance, Apartment,
     Owner, Resident, Staff, ParkingZone, ParkingSpot, StorageRoom, Visitor
 )
+from django.core.validators import RegexValidator, EmailValidator
+from django.core.exceptions import ValidationError
+
+letters_validator = RegexValidator(
+    r'^[A-Za-zА-Яа-яІіЇїЄєҐґʼ’\s-]+$',
+    "Поле повинно містити лише букви"
+)
+
+def validate_phone_or_email(value):
+    phone_validator = RegexValidator(
+        r'^\d+$',
+        'Телефон повинен містити тільки цифри'
+    )
+    email_validator = EmailValidator('Некоректний email')
+
+    try:
+        phone_validator(value) 
+    except ValidationError:
+        try:
+            email_validator(value)  
+        except ValidationError:
+            raise ValidationError(
+                'Введіть або номер телефону (лише цифри), або EMAIL'
+            )
 
 
 class ResidentialComplexForm(forms.ModelForm):
@@ -24,9 +48,15 @@ class ResidentialComplexForm(forms.ModelForm):
             }),
             'contact': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '+38 (0XX) XXX-XX-XX або email'
+                'placeholder': 'Введіть телефон або email'
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['contact'].validators = [validate_phone_or_email]
+
+
 
 
 class BuildingForm(forms.ModelForm):
@@ -93,6 +123,11 @@ class OwnerForm(forms.ModelForm):
             'phone': 'Телефон',
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['name'].validators = [letters_validator]
+        self.fields['phone'].validators = [validate_phone_or_email]
+
 
 class ResidentForm(forms.ModelForm):
     class Meta:
@@ -114,11 +149,20 @@ class ResidentForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         complex_obj = kwargs.pop('complex_obj', None)
         super().__init__(*args, **kwargs)
+        self.fields['fullname'].validators = [letters_validator]
+        self.fields['contact'].validators = [validate_phone_or_email]
+        self.fields['role'].validators = [letters_validator]
         self.fields['apartment'].required = False
+
         if complex_obj is not None:
             self.fields['apartment'].queryset = Apartment.objects.filter(
                 entrance__building__complex=complex_obj
-            ).order_by('entrance__building__number', 'entrance__number', 'number')
+            ).order_by(
+                'entrance__building__number',
+                'entrance__number',
+                'number'
+            )
+
 
 
 class StaffForm(forms.ModelForm):
@@ -143,10 +187,14 @@ class StaffForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         complex_obj = kwargs.pop('complex_obj', None)
         super().__init__(*args, **kwargs)
+        self.fields['fullname'].validators = [letters_validator]
+        self.fields['contact'].validators = [validate_phone_or_email]
+        self.fields['role'].validators = [letters_validator]
         if complex_obj is not None:
             from .models import ResidentialComplex as RC
             self.fields['complex'].queryset = RC.objects.filter(pk=complex_obj.pk)
             self.fields['complex'].initial = complex_obj
+
 
 
 class ParkingZoneForm(forms.ModelForm):

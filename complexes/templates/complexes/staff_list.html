@@ -37,31 +37,61 @@
 <h4>Додати співробітника</h4>
 <form method="post" class="card p-3">
     {% csrf_token %}
-    <div class="row g-2 align-items-end">
+
+    <div class="row g-2">
+
+        <!-- ПІБ -->
         <div class="col-md-3">
-            <label class="form-label" for="id_staff_fullname">ПІБ</label>
+            <label class="form-label">ПІБ</label>
             {{ form.fullname }}
+            {% if form.fullname.errors %}
+                <div class="text-danger small">{{ form.fullname.errors.0 }}</div>
+            {% endif %}
         </div>
+
+        <!-- Роль -->
         <div class="col-md-2">
-            <label class="form-label" for="id_staff_role">Роль</label>
+            <label class="form-label">Роль</label>
             {{ form.role }}
+            {% if form.role.errors %}
+                <div class="text-danger small">{{ form.role.errors.0 }}</div>
+            {% endif %}
         </div>
+
+        <!-- Контакти -->
         <div class="col-md-2">
-            <label class="form-label" for="id_staff_contact">Контакти</label>
+            <label class="form-label">Контакти</label>
             {{ form.contact }}
+            {% if form.contact.errors %}
+                <div class="text-danger small">{{ form.contact.errors.0 }}</div>
+            {% endif %}
         </div>
+
+        <!-- Графік -->
         <div class="col-md-2">
-            <label class="form-label" for="id_staff_schedule">Графік</label>
+            <label class="form-label">Графік</label>
             {{ form.work_schedule }}
+            {% if form.work_schedule.errors %}
+                <div class="text-danger small">{{ form.work_schedule.errors.0 }}</div>
+            {% endif %}
         </div>
+
+        <!-- ЖК -->
         <div class="col-md-2">
-            <label class="form-label" for="id_staff_complex">ЖК</label>
+            <label class="form-label">ЖК</label>
             {{ form.complex }}
+            {% if form.complex.errors %}
+                <div class="text-danger small">{{ form.complex.errors.0 }}</div>
+            {% endif %}
         </div>
-        <div class="col-md-1">
+
+        <!-- Кнопка -->
+        <div class="col-md-1 pt-4">
             <button class="btn btn-success w-100" type="submit">Додати</button>
         </div>
+
     </div>
 </form>
 {% endif %}
+
 {% endblock %}

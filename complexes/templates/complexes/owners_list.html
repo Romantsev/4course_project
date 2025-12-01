@@ -33,20 +33,35 @@
 <h4>Додати власника</h4>
 <form method="post" class="card p-3">
   {% csrf_token %}
-  <div class="row g-2 align-items-end">
-    <div class="col-md-5">
+  <div class="row g-2">
+    <div class="col-md-5 d-flex flex-column">
       <label class="form-label" for="id_owner_name">ПІБ</label>
       {{ form.name }}
+      <div class="text-danger small mt-1" style="min-height: 1.25em;">
+        {% if form.name.errors %}
+          {{ form.name.errors.0 }}
+        {% endif %}
+      </div>
     </div>
-    <div class="col-md-5">
+
+    <div class="col-md-5 d-flex flex-column">
       <label class="form-label" for="id_owner_phone">Телефон</label>
       {{ form.phone }}
+      <div class="text-danger small mt-1" style="min-height: 1.25em;">
+        {% if form.phone.errors %}
+          {{ form.phone.errors.0 }}
+        {% endif %}
+      </div>
     </div>
-    <div class="col-md-2">
+
+    <div class="col-md-2 d-flex align-items-end">
       <button class="btn btn-success w-100" type="submit">Додати</button>
     </div>
   </div>
 </form>
+
+
+
 {% endif %}
 {% endblock %}
 

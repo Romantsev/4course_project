@@ -66,30 +66,57 @@ document.getElementById('id_complex_filter').addEventListener('change', function
     </tbody>
 </table>
 
+
 {% if form %}
 <h4>Додати мешканця</h4>
 <form method="post" class="card p-3">
     {% csrf_token %}
-    <div class="row g-2 align-items-end">
+
+    <div class="row g-2">
+
+        <!-- ПІБ -->
         <div class="col-md-3">
-            <label class="form-label" for="id_res_fullname">ПІБ</label>
+            <label class="form-label">ПІБ</label>
             {{ form.fullname }}
+            {% if form.fullname.errors %}
+                <div class="text-danger small">{{ form.fullname.errors.0 }}</div>
+            {% endif %}
         </div>
+
+        <!-- Роль -->
         <div class="col-md-2">
-            <label class="form-label" for="id_res_role">Роль</label>
+            <label class="form-label">Роль</label>
             {{ form.role }}
+            {% if form.role.errors %}
+                <div class="text-danger small">{{ form.role.errors.0 }}</div>
+            {% endif %}
         </div>
+
+        <!-- Квартира -->
         <div class="col-md-3">
-            <label class="form-label" for="id_res_apartment">Квартира</label>
+            <label class="form-label">Квартира</label>
             {{ form.apartment }}
+            {% if form.apartment.errors %}
+                <div class="text-danger small">{{ form.apartment.errors.0 }}</div>
+            {% endif %}
         </div>
+
+        <!-- Контакти -->
         <div class="col-md-3">
-            <label class="form-label" for="id_res_contact">Контакти</label>
+            <label class="form-label">Контакти</label>
             {{ form.contact }}
+            {% if form.contact.errors %}
+                <div class="text-danger small">{{ form.contact.errors.0 }}</div>
+            {% endif %}
         </div>
-        <div class="col-md-1">
-            <button class="btn btn-success w-100" type="submit">Додати</button>
+
+        <!-- Кнопка -->
+        <div class="col-md-1 pt-4">
+            <button class="btn btn-success w-100" type="submit">
+                Додати
+            </button>
         </div>
+
     </div>
 </form>
 {% endif %}
