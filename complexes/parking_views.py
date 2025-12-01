@@ -1,12 +1,15 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseForbidden
 
-from .models import ParkingZone, ParkingSpot
+from .models import ParkingZone, ParkingSpot, Entrance, ResidentialComplex
 from .forms import ParkingZoneForm, ParkingSpotForm
 from accounts.utils import is_superadmin, is_complex_admin, get_complex_for_admin
 
 
 def parking_list(request):
+    complexes = ResidentialComplex.objects.order_by('name')
+    selected_complex_id = (request.GET.get('complex') or '').strip()
+
     if is_superadmin(request.user):
         if request.method == 'POST':
             if request.POST.get('add_zone'):
@@ -14,12 +17,16 @@ def parking_list(request):
                 spot_form = ParkingSpotForm()
                 if zone_form.is_valid():
                     zone_form.save()
+                    if selected_complex_id:
+                        return redirect(f"{request.path}?complex={selected_complex_id}")
                     return redirect('parking_list')
             elif request.POST.get('add_spot'):
                 spot_form = ParkingSpotForm(request.POST)
                 zone_form = ParkingZoneForm()
                 if spot_form.is_valid():
                     spot_form.save()
+                    if selected_complex_id:
+                        return redirect(f"{request.path}?complex={selected_complex_id}")
                     return redirect('parking_list')
             else:
                 zone_form = ParkingZoneForm()
@@ -28,14 +35,47 @@ def parking_list(request):
             zone_form = ParkingZoneForm()
             spot_form = ParkingSpotForm()
 
-        zones = ParkingZone.objects.select_related('entrance').all()
-        spots = ParkingSpot.objects.select_related('parking_zone', 'owner').all()
+        zones = ParkingZone.objects.select_related(
+            'entrance__building__complex'
+        ).all()
+        spots = ParkingSpot.objects.select_related(
+            'parking_zone__entrance__building__complex',
+            'owner',
+        ).all()
+
+        if selected_complex_id:
+            try:
+                cid = int(selected_complex_id)
+            except (TypeError, ValueError):
+                cid = None
+            if cid is not None:
+                zones = zones.filter(entrance__building__complex_id=cid)
+                spots = spots.filter(parking_zone__entrance__building__complex_id=cid)
+
+                if zone_form is not None:
+                    zone_form.fields['entrance'].queryset = Entrance.objects.filter(
+                        building__complex_id=cid
+                    ).order_by('building__number', 'number')
+                if spot_form is not None:
+                    spot_form.fields['parking_zone'].queryset = ParkingZone.objects.filter(
+                        entrance__building__complex_id=cid
+                    ).order_by('parking_zone_id')
+
     elif is_complex_admin(request.user):
         complex_obj = get_complex_for_admin(request.user)
-        zones = ParkingZone.objects.select_related('entrance').filter(
+        if complex_obj is None:
+            return HttpResponseForbidden("Доступ заборонено.")
+
+        selected_complex_id = str(complex_obj.pk)
+        zones = ParkingZone.objects.select_related(
+            'entrance__building__complex'
+        ).filter(
             entrance__building__complex=complex_obj
         )
-        spots = ParkingSpot.objects.select_related('parking_zone', 'owner').filter(
+        spots = ParkingSpot.objects.select_related(
+            'parking_zone__entrance__building__complex',
+            'owner',
+        ).filter(
             parking_zone__entrance__building__complex=complex_obj
         )
         zone_form = None
@@ -48,6 +88,8 @@ def parking_list(request):
         'spots': spots,
         'zone_form': zone_form,
         'spot_form': spot_form,
+        'complexes': complexes,
+        'selected_complex_id': selected_complex_id,
     })
 
 
@@ -107,4 +149,3 @@ def parking_spot_delete(request, pk):
     return render(request, 'complexes/confirm_delete.html', {
         'title': f"Видалити паркомісце №{spot.number}?",
     })
-

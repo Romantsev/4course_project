@@ -2,7 +2,24 @@
 {% block title %}Паркінг{% endblock %}
 
 {% block content %}
-<h3>Зони паркінгу</h3>
+<h3>Управління паркінгом</h3>
+
+<!-- Фільтр по ЖК -->
+<form method="get" class="row mb-3">
+    <div class="col-md-4">
+        <label class="form-label">ЖК:</label>
+        <select name="complex" class="form-select" onchange="this.form.submit()">
+            <option value="">Всі ЖК</option>
+            {% for c in complexes %}
+                <option value="{{ c.pk }}" {% if selected_complex_id == c.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ c.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+</form>
+
+<h4>Паркінг-зони</h4>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -28,10 +45,10 @@
             </td>
         </tr>
         {% empty %}
-        <tr><td colspan="5">Зон паркінгу не знайдено.</td></tr>
+        <tr><td colspan="5">Паркінг-зон поки немає.</td></tr>
         {% endfor %}
     </tbody>
-    </table>
+</table>
 
 {% if zone_form %}
 <h5>Додати паркінг-зону</h5>
@@ -55,12 +72,12 @@
             <button type="submit" class="btn btn-success w-100">Додати</button>
         </div>
     </div>
-    </form>
+</form>
 {% endif %}
 
 <hr>
 
-<h3>Паркомісця</h3>
+<h4>Паркомісця</h4>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -86,7 +103,7 @@
             </td>
         </tr>
         {% empty %}
-        <tr><td colspan="5">Паркомісць не знайдено.</td></tr>
+        <tr><td colspan="5">Паркомісць поки немає.</td></tr>
         {% endfor %}
     </tbody>
 </table>
@@ -120,4 +137,3 @@
 </form>
 {% endif %}
 {% endblock %}
-
