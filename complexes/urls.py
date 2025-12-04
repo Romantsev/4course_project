@@ -1,10 +1,13 @@
 from django.urls import path
+
 from . import views
 from . import people_views
 from . import parking_views
 from . import maintenance_views
 from . import access_views
 from . import visitors_override
+from . import storage_access
+
 
 urlpatterns = [
     path('', views.complex_list, name='complex_list'),
@@ -27,7 +30,7 @@ urlpatterns = [
     path('apartment/<int:pk>/edit/', views.apartment_edit, name='apartment_edit'),
     path('apartment/<int:pk>/delete/', views.apartment_delete, name='apartment_delete'),
 
-    # Довідкові списки (для супер адміна)
+    # Довідники людей (мешканці, власники, персонал)
     path('owners/', people_views.owners_list, name='owners_list'),
     path('residents/', people_views.residents_list, name='residents_list'),
     path('staff/', people_views.staff_list, name='staff_list'),
@@ -37,23 +40,21 @@ urlpatterns = [
     path('parking_spot/<int:pk>/edit/', parking_views.parking_spot_edit, name='parking_spot_edit'),
     path('parking_spot/<int:pk>/delete/', parking_views.parking_spot_delete, name='parking_spot_delete'),
 
-    # Власники
-    # Owners
+    # Окремі операції з людьми
     path('owner/<int:pk>/edit/', views.owner_edit, name='owner_edit'),
     path('owner/<int:pk>/delete/', views.owner_delete, name='owner_delete'),
 
-    # Жильці/персонал: редагування/видалення
     path('resident/<int:pk>/edit/', people_views.resident_edit, name='resident_edit'),
     path('resident/<int:pk>/delete/', people_views.resident_delete, name='resident_delete'),
     path('staff/<int:pk>/edit/', people_views.staff_edit, name='staff_edit'),
     path('staff/<int:pk>/delete/', people_views.staff_delete, name='staff_delete'),
 
-     # Комірки
-    path('storage/', views.storage_list, name='storage_list'), 
-    path('storage/<int:pk>/edit/', views.storage_edit, name='storage_edit'),
-    path('storage/<int:pk>/delete/', views.storage_delete, name='storage_delete'),   
+    # Комори
+    path('storage/', storage_access.storage_list, name='storage_list'),
+    path('storage/<int:pk>/edit/', storage_access.storage_edit, name='storage_edit'),
+    path('storage/<int:pk>/delete/', storage_access.storage_delete, name='storage_delete'),
 
-    # Заявки на ремонт
+    # Заявки на обслуговування
     path('tickets/owner/', maintenance_views.tickets_owner_list, name='tickets_owner_list'),
     path('tickets/owner/create/', maintenance_views.ticket_create, name='ticket_create'),
     path('tickets/staff/', maintenance_views.tickets_staff_list, name='tickets_staff_list'),
@@ -66,3 +67,4 @@ urlpatterns = [
     path('residents/quick-add/', access_views.resident_quick_add, name='resident_quick_add'),
     path('visitor/<int:pk>/delete/', access_views.visitor_delete, name='visitor_delete'),
 ]
+

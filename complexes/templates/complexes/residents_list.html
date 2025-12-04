@@ -4,18 +4,20 @@
 {% block content %}
 <h3>Мешканці</h3>
 
-<!-- Фільтр за ЖК -->
+{# Фільтр за ЖК (для супер-адміна) #}
 <form method="get" id="filter-form" class="mb-3">
     <div class="row g-2 align-items-center">
         <div class="col-auto">
             <label class="form-label mb-0" for="id_complex_filter">ЖК</label>
             <select id="id_complex_filter" name="complex" class="form-select">
-                <option value="">--- Всі ЖК ---</option>
-                {% for c in complexes %}
-                    <option value="{{ c.complex_id }}" {% if selected_complex == c.complex_id %}selected{% endif %}>
-                        {{ c.name }}
-                    </option>
-                {% endfor %}
+                <option value="">--- Обрати ЖК ---</option>
+                {% if complexes %}
+                    {% for c in complexes %}
+                        <option value="{{ c.complex_id }}" {% if selected_complex == c.complex_id %}selected{% endif %}>
+                            {{ c.name }}
+                        </option>
+                    {% endfor %}
+                {% endif %}
             </select>
         </div>
     </div>
@@ -33,7 +35,7 @@ document.getElementById('id_complex_filter').addEventListener('change', function
             <th>ПІБ</th>
             <th>Роль</th>
             <th>Квартира</th>
-            <th>Контакти</th>
+            <th>Контакт</th>
             <th></th>
         </tr>
     </thead>
@@ -44,9 +46,9 @@ document.getElementById('id_complex_filter').addEventListener('change', function
             <td>{{ r.role }}</td>
             <td>
                 {% if r.apartment %}
-                    Кв. {{ r.apartment.number }}
+                    кв. {{ r.apartment.number }}
                     {% if r.apartment.entrance and r.apartment.entrance.building and r.apartment.entrance.building.complex %}
-                        — {{ r.apartment.entrance.building.complex.name }}
+                        у {{ r.apartment.entrance.building.complex.name }}
                     {% endif %}
                 {% else %}
                     -
@@ -54,9 +56,9 @@ document.getElementById('id_complex_filter').addEventListener('change', function
             </td>
             <td>{{ r.contact }}</td>
             <td>
-                {% if user.is_superuser %}
-                <a href="{% url 'resident_edit' r.pk %}" class="btn btn-sm btn-primary">Редагувати</a>
-                <a href="{% url 'resident_delete' r.pk %}" class="btn btn-sm btn-danger">Видалити</a>
+                {% if user.is_superuser or user.complex_admin_profile or user.is_authenticated and user.staff_account.access_type == 'guard' %}
+                    <a href="{% url 'resident_edit' r.pk %}" class="btn btn-sm btn-primary">Редагувати</a>
+                    <a href="{% url 'resident_delete' r.pk %}" class="btn btn-sm btn-danger">Видалити</a>
                 {% endif %}
             </td>
         </tr>
@@ -74,7 +76,6 @@ document.getElementById('id_complex_filter').addEventListener('change', function
 
     <div class="row g-2">
 
-        <!-- ПІБ -->
         <div class="col-md-3">
             <label class="form-label">ПІБ</label>
             {{ form.fullname }}
@@ -83,7 +84,6 @@ document.getElementById('id_complex_filter').addEventListener('change', function
             {% endif %}
         </div>
 
-        <!-- Роль -->
         <div class="col-md-2">
             <label class="form-label">Роль</label>
             {{ form.role }}
@@ -92,7 +92,6 @@ document.getElementById('id_complex_filter').addEventListener('change', function
             {% endif %}
         </div>
 
-        <!-- Квартира -->
         <div class="col-md-3">
             <label class="form-label">Квартира</label>
             {{ form.apartment }}
@@ -101,16 +100,14 @@ document.getElementById('id_complex_filter').addEventListener('change', function
             {% endif %}
         </div>
 
-        <!-- Контакти -->
         <div class="col-md-3">
-            <label class="form-label">Контакти</label>
+            <label class="form-label">Контакт</label>
             {{ form.contact }}
             {% if form.contact.errors %}
                 <div class="text-danger small">{{ form.contact.errors.0 }}</div>
             {% endif %}
         </div>
 
-        <!-- Кнопка -->
         <div class="col-md-1 pt-4">
             <button class="btn btn-success w-100" type="submit">
                 Додати

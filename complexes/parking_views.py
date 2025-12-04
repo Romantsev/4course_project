@@ -66,7 +66,10 @@ def parking_list(request):
         if complex_obj is None:
             return HttpResponseForbidden("Доступ заборонено.")
 
+        # фіксований ЖК для адміністратора
         selected_complex_id = str(complex_obj.pk)
+        complexes = ResidentialComplex.objects.filter(pk=complex_obj.pk)
+
         zones = ParkingZone.objects.select_related(
             'entrance__building__complex'
         ).filter(
@@ -78,8 +81,42 @@ def parking_list(request):
         ).filter(
             parking_zone__entrance__building__complex=complex_obj
         )
-        zone_form = None
-        spot_form = None
+
+        # форми додавання зон/місць
+        if request.method == 'POST':
+            if request.POST.get('add_zone'):
+                zone_form = ParkingZoneForm(request.POST)
+                spot_form = ParkingSpotForm()
+            elif request.POST.get('add_spot'):
+                spot_form = ParkingSpotForm(request.POST)
+                zone_form = ParkingZoneForm()
+            else:
+                zone_form = ParkingZoneForm()
+                spot_form = ParkingSpotForm()
+        else:
+            zone_form = ParkingZoneForm()
+            spot_form = ParkingSpotForm()
+
+        # обмежуємо вибір лише об'єктами поточного ЖК
+        entrances_qs = Entrance.objects.filter(
+            building__complex=complex_obj
+        ).order_by('building__number', 'number')
+        zones_qs = ParkingZone.objects.filter(
+            entrance__building__complex=complex_obj
+        ).order_by('parking_zone_id')
+
+        if zone_form is not None:
+            zone_form.fields['entrance'].queryset = entrances_qs
+        if spot_form is not None:
+            spot_form.fields['parking_zone'].queryset = zones_qs
+
+        if request.method == 'POST':
+            if request.POST.get('add_zone') and zone_form.is_valid():
+                zone_form.save()
+                return redirect('parking_list')
+            if request.POST.get('add_spot') and spot_form.is_valid():
+                spot_form.save()
+                return redirect('parking_list')
     else:
         return HttpResponseForbidden("Доступ заборонено.")
 
@@ -94,16 +131,39 @@ def parking_list(request):
 
 
 def parking_zone_edit(request, pk):
-    if not is_superadmin(request.user):
+    zone = get_object_or_404(
+        ParkingZone.objects.select_related('entrance__building__complex'),
+        pk=pk,
+    )
+
+    complex_obj = None
+    if is_superadmin(request.user):
+        pass
+    elif is_complex_admin(request.user):
+        complex_obj = get_complex_for_admin(request.user)
+        if (
+            complex_obj is None
+            or zone.entrance.building.complex_id != complex_obj.pk
+        ):
+            return HttpResponseForbidden("Доступ заборонено.")
+    else:
         return HttpResponseForbidden("Доступ заборонено.")
-    zone = get_object_or_404(ParkingZone, pk=pk)
+
     if request.method == 'POST':
         form = ParkingZoneForm(request.POST, instance=zone)
+        if complex_obj is not None:
+            form.fields['entrance'].queryset = Entrance.objects.filter(
+                building__complex=complex_obj
+            ).order_by('building__number', 'number')
         if form.is_valid():
             form.save()
             return redirect('parking_list')
     else:
         form = ParkingZoneForm(instance=zone)
+        if complex_obj is not None:
+            form.fields['entrance'].queryset = Entrance.objects.filter(
+                building__complex=complex_obj
+            ).order_by('building__number', 'number')
     return render(request, 'complexes/simple_form.html', {
         'title': f"Редагувати паркінг-зону #{zone.parking_zone_id}",
         'form': form,
@@ -111,9 +171,23 @@ def parking_zone_edit(request, pk):
 
 
 def parking_zone_delete(request, pk):
-    if not is_superadmin(request.user):
+    zone = get_object_or_404(
+        ParkingZone.objects.select_related('entrance__building__complex'),
+        pk=pk,
+    )
+
+    if is_superadmin(request.user):
+        pass
+    elif is_complex_admin(request.user):
+        complex_obj = get_complex_for_admin(request.user)
+        if (
+            complex_obj is None
+            or zone.entrance.building.complex_id != complex_obj.pk
+        ):
+            return HttpResponseForbidden("Доступ заборонено.")
+    else:
         return HttpResponseForbidden("Доступ заборонено.")
-    zone = get_object_or_404(ParkingZone, pk=pk)
+
     if request.method == 'POST':
         zone.delete()
         return redirect('parking_list')
@@ -123,16 +197,41 @@ def parking_zone_delete(request, pk):
 
 
 def parking_spot_edit(request, pk):
-    if not is_superadmin(request.user):
+    spot = get_object_or_404(
+        ParkingSpot.objects.select_related(
+            'parking_zone__entrance__building__complex'
+        ),
+        pk=pk,
+    )
+
+    complex_obj = None
+    if is_superadmin(request.user):
+        pass
+    elif is_complex_admin(request.user):
+        complex_obj = get_complex_for_admin(request.user)
+        if (
+            complex_obj is None
+            or spot.parking_zone.entrance.building.complex_id != complex_obj.pk
+        ):
+            return HttpResponseForbidden("Доступ заборонено.")
+    else:
         return HttpResponseForbidden("Доступ заборонено.")
-    spot = get_object_or_404(ParkingSpot, pk=pk)
+
     if request.method == 'POST':
         form = ParkingSpotForm(request.POST, instance=spot)
+        if complex_obj is not None:
+            form.fields['parking_zone'].queryset = ParkingZone.objects.filter(
+                entrance__building__complex=complex_obj
+            ).order_by('parking_zone_id')
         if form.is_valid():
             form.save()
             return redirect('parking_list')
     else:
         form = ParkingSpotForm(instance=spot)
+        if complex_obj is not None:
+            form.fields['parking_zone'].queryset = ParkingZone.objects.filter(
+                entrance__building__complex=complex_obj
+            ).order_by('parking_zone_id')
     return render(request, 'complexes/simple_form.html', {
         'title': f"Редагувати паркомісце №{spot.number}",
         'form': form,
@@ -140,9 +239,25 @@ def parking_spot_edit(request, pk):
 
 
 def parking_spot_delete(request, pk):
-    if not is_superadmin(request.user):
+    spot = get_object_or_404(
+        ParkingSpot.objects.select_related(
+            'parking_zone__entrance__building__complex'
+        ),
+        pk=pk,
+    )
+
+    if is_superadmin(request.user):
+        pass
+    elif is_complex_admin(request.user):
+        complex_obj = get_complex_for_admin(request.user)
+        if (
+            complex_obj is None
+            or spot.parking_zone.entrance.building.complex_id != complex_obj.pk
+        ):
+            return HttpResponseForbidden("Доступ заборонено.")
+    else:
         return HttpResponseForbidden("Доступ заборонено.")
-    spot = get_object_or_404(ParkingSpot, pk=pk)
+
     if request.method == 'POST':
         spot.delete()
         return redirect('parking_list')

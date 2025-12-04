@@ -11,6 +11,7 @@ class ResidentialComplex(models.Model):
     class Meta:
         db_table = 'residential_complex'
         ordering = ['name']
+        managed = False
 
     def __str__(self):
         return self.name
@@ -30,6 +31,7 @@ class Building(models.Model):
     class Meta:
         db_table = 'building'
         ordering = ['number']
+        managed = False
 
     def __str__(self):
         return f"Будинок {self.number} ({self.complex.name})"
@@ -48,6 +50,7 @@ class Entrance(models.Model):
     class Meta:
         db_table = 'entrance'
         ordering = ['number']
+        managed = False
 
     def __str__(self):
         return f"Під'їзд {self.number}, буд. {self.building.number}"
@@ -61,6 +64,7 @@ class Owner(models.Model):
     class Meta:
         db_table = 'owner'
         ordering = ['name']
+        managed = False
 
     def __str__(self):
         return self.name
@@ -90,6 +94,7 @@ class Apartment(models.Model):
     class Meta:
         db_table = 'apartment'
         ordering = ['entrance', 'floor', 'number']
+        managed = False
 
     def __str__(self):
         return f"Кв. {self.number} ({self.entrance})"
@@ -113,6 +118,7 @@ class Resident(models.Model):
     class Meta:
         db_table = 'resident'
         ordering = ['fullname']
+        managed = False
 
     def __str__(self):
         return self.fullname
@@ -134,6 +140,7 @@ class Staff(models.Model):
     class Meta:
         db_table = 'staff'
         ordering = ['fullname']
+        managed = False
 
     def __str__(self):
         return self.fullname
@@ -152,6 +159,7 @@ class ParkingZone(models.Model):
 
     class Meta:
         db_table = 'parking_zone'
+        managed = False
 
     def __str__(self):
         return f"Паркінг зона {self.parking_zone_id} ({self.type})"
@@ -176,6 +184,7 @@ class ParkingSpot(models.Model):
 
     class Meta:
         db_table = 'parking_spot'
+        managed = False
 
     def __str__(self):
         return f"Місце {self.number} ({self.parking_zone})"
@@ -201,7 +210,8 @@ class StorageRoom(models.Model):
     )
 
     class Meta:
-        db_table = 'complexes_storageroom'
+        db_table = 'storage_room'
+        managed = False
 
     def __str__(self):
         base = f"Комірка {self.number}"
@@ -227,6 +237,10 @@ class Visitor(models.Model):
         related_name='added_visitors'
     )
 
+    class Meta:
+        db_table = 'complexes_visitor'
+        managed = False
+
 class MaintenanceRequest(models.Model):
     STATUS_CHOICES = [
         ('new', 'Нова'),
@@ -240,3 +254,7 @@ class MaintenanceRequest(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'complexes_maintenancerequest'
+        managed = False

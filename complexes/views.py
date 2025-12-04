@@ -33,8 +33,22 @@ from .forms import (
 )
 from accounts.utils import (
     is_superadmin,
+    is_complex_admin,
+    get_complex_for_admin,
     user_can_manage_complex,
 )
+
+
+def _has_technician_access(user):
+    """
+    Повертає True, якщо користувач – технічний працівник (maintenance staff).
+    Використовується, щоб заборонити їм доступ до комор.
+    """
+    return (
+        user.is_authenticated
+        and hasattr(user, "staff_account")
+        and getattr(user.staff_account, "access_type", "maintenance") == "maintenance"
+    )
 
 
 # =========================
@@ -394,13 +408,23 @@ from .models import StorageRoom, Apartment
 
 def storage_list(request):
 
-    # --- всі ЖК ---
-    complexes = ResidentialComplex.objects.order_by('name')
+    # --- всі ЖК (буде звужено для адміна ЖК) ---
+    complexes_qs = ResidentialComplex.objects.order_by('name')
 
-    # --- вибраний ЖК із GET ---
+    # --- вибраний ЖК із GET (для супер-адміна) ---
     selected_complex_id = request.GET.get("complex")
     if selected_complex_id:
         selected_complex_id = str(selected_complex_id)
+
+    # --- якщо користувач адміністратор ЖК, фіксуємо його комплекс ---
+    if is_complex_admin(request.user):
+        complex_obj = get_complex_for_admin(request.user)
+        if not complex_obj:
+            return HttpResponseForbidden("Немає доступу.")
+        selected_complex_id = str(complex_obj.pk)
+        complexes = complexes_qs.filter(pk=complex_obj.pk)
+    else:
+        complexes = complexes_qs
 
     # --- базовий queryset ---
     storages = StorageRoom.objects.select_related(
@@ -454,12 +478,16 @@ def storage_list(request):
             return redirect(f"/storage/?complex={selected_complex_id}")
         return redirect('storage_list')
 
-    return render(request, 'complexes/storage_list.html', {
-        'storages': storages,
-        'apartments': apartments,
-        'complexes': complexes,
-        'selected_complex_id': selected_complex_id,
-    })
+    return render(
+        request,
+        'complexes/storage_list.html',
+        {
+            'storages': storages,
+            'apartments': apartments,
+            'complexes': complexes,
+            'selected_complex_id': selected_complex_id,
+        },
+    )
 
 
 
@@ -476,14 +504,29 @@ def storage_edit(request, pk):
         pk=pk
     )
 
-    # --- всі ЖК ---
-    complexes = ResidentialComplex.objects.order_by('name')
+    # --- всі ЖК (буде звужено для адміна ЖК) ---
+    complexes_qs = ResidentialComplex.objects.order_by('name')
 
-    # --- визначаємо поточний ЖК ---
-    selected_complex_id = request.POST.get('complex') or (
-        storage.apartment.entrance.building.complex.pk
-        if storage.apartment else None
-    )
+    # --- перевірка доступу та поточний ЖК ---
+    selected_complex_id = None
+    if is_complex_admin(request.user):
+        complex_obj = get_complex_for_admin(request.user)
+        if not complex_obj:
+            return HttpResponseForbidden("Немає доступу.")
+        # комірка має бути прив'язана до квартири в цьому ЖК
+        if (
+            not storage.apartment
+            or storage.apartment.entrance.building.complex_id != complex_obj.pk
+        ):
+            return HttpResponseForbidden("Немає доступу.")
+        selected_complex_id = complex_obj.pk
+        complexes = complexes_qs.filter(pk=complex_obj.pk)
+    else:
+        complexes = complexes_qs
+        selected_complex_id = request.POST.get('complex') or (
+            storage.apartment.entrance.building.complex.pk
+            if storage.apartment else None
+        )
 
     selected_complex = None
     if selected_complex_id:
@@ -500,7 +543,7 @@ def storage_edit(request, pk):
         )
 
     # ====== POST SAVE ======
-    if request.method == 'POST' and request.POST.get("save"):
+    if request.method == 'POST':
         storage.number = (request.POST.get('number') or '').strip()
         storage.location = (request.POST.get('location') or '').strip()
         storage.status = request.POST.get('status') or 'free'
@@ -514,12 +557,16 @@ def storage_edit(request, pk):
         storage.save()
         return redirect('storage_list')
 
-    return render(request, 'complexes/storage_edit.html', {
-        'storage': storage,
-        'complexes': complexes,
-        'selected_complex': selected_complex,
-        'apartments': apartments,
-    })
+    return render(
+        request,
+        'complexes/storage_edit.html',
+        {
+            'storage': storage,
+            'complexes': complexes,
+            'selected_complex': selected_complex,
+            'apartments': apartments,
+        },
+    )
 
 
 
@@ -527,27 +574,61 @@ def storage_edit(request, pk):
 
 
 def storage_delete(request, pk):
-    storage = get_object_or_404(StorageRoom, pk=pk)
+    storage = get_object_or_404(
+        StorageRoom.objects.select_related(
+            'apartment',
+            'apartment__entrance',
+            'apartment__entrance__building',
+            'apartment__entrance__building__complex',
+        ),
+        pk=pk,
+    )
+
+    # --- доступ для адміна ЖК тільки до свого комплексу ---
+    if is_complex_admin(request.user):
+        complex_obj = get_complex_for_admin(request.user)
+        if (
+            not complex_obj
+            or not storage.apartment
+            or storage.apartment.entrance.building.complex_id != complex_obj.pk
+        ):
+            return HttpResponseForbidden("Немає доступу.")
+
     if request.method == 'POST':
         storage.delete()
         return redirect('storage_list')
-    return render(request, 'complexes/confirm_delete.html', {
-        'title': f"Видалити комірку №{storage.number}?",
-    })
+    return render(
+        request,
+        'complexes/confirm_delete.html',
+        {
+            'title': f"Видалити комірку №{storage.number}?",
+        },
+    )
 
 
 def owner_edit(request, pk):
     """
     Редагування власника.
-    Доступ: тільки SuperAdmin.
+    Доступ: SuperAdmin або ComplexAdmin власного ЖК.
     """
-    if not is_superadmin(request.user):
-        return HttpResponseForbidden("Немає доступу.")
-
     owner = Owner.objects.filter(pk=pk).first()
     if not owner:
         messages.warning(request, "Власника не знайдено або вже видалено.")
         return redirect('owners_list')
+
+    # Перевірка прав
+    if is_superadmin(request.user):
+        pass
+    else:
+        complex_obj = get_complex_for_admin(request.user)
+        if not complex_obj:
+            return HttpResponseForbidden("Немає доступу.")
+        has_apartment_in_complex = Apartment.objects.filter(
+            owner=owner,
+            entrance__building__complex=complex_obj,
+        ).exists()
+        if not has_apartment_in_complex:
+            return HttpResponseForbidden("Немає доступу.")
 
     if request.method == 'POST':
         form = OwnerForm(request.POST, instance=owner)
@@ -566,17 +647,31 @@ def owner_edit(request, pk):
 def owner_delete(request, pk):
     """
     Видалення власника.
-    Доступ: тільки SuperAdmin.
+    Доступ: SuperAdmin або ComplexAdmin власного ЖК.
     """
-    if not is_superadmin(request.user):
-        return HttpResponseForbidden("Немає доступу.")
-
     owner = Owner.objects.filter(pk=pk).first()
     if not owner:
         messages.warning(request, "Власника не знайдено або вже видалено.")
         return redirect('owners_list')
 
+    # Перевірка прав
+    if is_superadmin(request.user):
+        pass
+    else:
+        complex_obj = get_complex_for_admin(request.user)
+        if not complex_obj:
+            return HttpResponseForbidden("Немає доступу.")
+        has_apartment_in_complex = Apartment.objects.filter(
+            owner=owner,
+            entrance__building__complex=complex_obj,
+        ).exists()
+        if not has_apartment_in_complex:
+            return HttpResponseForbidden("Немає доступу.")
+
     if request.method == 'POST':
+        # Перед видаленням відв'язуємо квартири від власника,
+        # щоб уникнути RestrictedError по Apartment.owner.
+        Apartment.objects.filter(owner=owner).update(owner=None)
         owner.delete()
         return redirect('owners_list')
 

@@ -2,26 +2,36 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 
-from accounts.utils import is_superadmin
+from accounts.utils import is_superadmin, is_complex_admin, get_complex_for_admin
 from .models import Visitor, Apartment, ResidentialComplex
 from .forms import VisitorForm as _VisitorForm
 
 
 @login_required
 def visitors_list(request):
-    if not (is_superadmin(request.user) or (
-        request.user.is_authenticated and hasattr(request.user, 'staff_account') and
-        getattr(request.user.staff_account, 'access_type', 'maintenance') == 'guard'
-    )):
+    user = request.user
+
+    is_guard = (
+        user.is_authenticated
+        and hasattr(user, 'staff_account')
+        and getattr(user.staff_account, 'access_type', 'maintenance') == 'guard'
+    )
+
+    # Доступ: SuperAdmin, ComplexAdmin, охоронець
+    if not (is_superadmin(user) or is_complex_admin(user) or is_guard):
         return HttpResponseForbidden("Недостатньо прав.")
+
     complex_obj = None
-    if not is_superadmin(request.user) and hasattr(request.user, 'staff_account'):
-        staff = request.user.staff_account.staff
-        complex_obj = staff.complex
     complexes = None
     selected_complex = request.GET.get('complex')
-    if is_superadmin(request.user):
+
+    if is_superadmin(user):
         complexes = ResidentialComplex.objects.order_by('name').all()
+    elif is_guard and hasattr(user, 'staff_account'):
+        staff = user.staff_account.staff
+        complex_obj = staff.complex
+    elif is_complex_admin(user):
+        complex_obj = get_complex_for_admin(user)
 
     if request.method == 'POST':
         form = _VisitorForm(request.POST, complex_obj=complex_obj) if complex_obj else _VisitorForm(request.POST)

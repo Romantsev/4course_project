@@ -3,6 +3,31 @@
 
 {% block content %}
 <h3>Власники</h3>
+
+<form method="get" id="filter-form" class="mb-3">
+  <div class="row g-2 align-items-center">
+      <div class="col-auto">
+          <label class="form-label mb-0" for="id_complex_filter">ЖК</label>
+          <select id="id_complex_filter" name="complex" class="form-select">
+              <option value="">--- Виберіть ЖК ---</option>
+              {% if complexes %}
+                  {% for c in complexes %}
+                      <option value="{{ c.complex_id }}" {% if selected_complex == c.complex_id %}selected{% endif %}>
+                          {{ c.name }}
+                      </option>
+                  {% endfor %}
+              {% endif %}
+          </select>
+      </div>
+  </div>
+</form>
+
+<script>
+document.getElementById('id_complex_filter').addEventListener('change', function() {
+    document.getElementById('filter-form').submit();
+});
+</script>
+
 <table class="table table-striped">
   <thead>
     <tr>
@@ -17,7 +42,7 @@
       <td>{{ o.name }}</td>
       <td>{{ o.phone }}</td>
       <td>
-        {% if user.is_superuser %}
+        {% if user.is_superuser or user.is_authenticated %}
         <a href="{% url 'owner_edit' o.owner_id %}" class="btn btn-sm btn-primary">Редагувати</a>
         <a href="{% url 'owner_delete' o.owner_id %}" class="btn btn-sm btn-danger">Видалити</a>
         {% endif %}
@@ -54,7 +79,7 @@
       </div>
     </div>
 
-    <div class="col-md-2 d-flex align-items-end">
+    <div class="col-md-2 pt-4">
       <button class="btn btn-success w-100" type="submit">Додати</button>
     </div>
   </div>
