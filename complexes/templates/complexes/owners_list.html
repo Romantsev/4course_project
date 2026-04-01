@@ -33,6 +33,7 @@ document.getElementById('id_complex_filter').addEventListener('change', function
     <tr>
       <th>ПІБ</th>
       <th>Телефон</th>
+      <th>ЖК</th>
       <th></th>
     </tr>
   </thead>
@@ -41,6 +42,7 @@ document.getElementById('id_complex_filter').addEventListener('change', function
     <tr>
       <td>{{ o.name }}</td>
       <td>{{ o.phone }}</td>
+      <td>{% if o.complex %}{{ o.complex.name }}{% else %}-{% endif %}</td>
       <td>
         {% if user.is_superuser or user.is_authenticated %}
         <a href="{% url 'owner_edit' o.owner_id %}" class="btn btn-sm btn-primary">Редагувати</a>
@@ -59,7 +61,7 @@ document.getElementById('id_complex_filter').addEventListener('change', function
 <form method="post" class="card p-3">
   {% csrf_token %}
   <div class="row g-2">
-    <div class="col-md-5 d-flex flex-column">
+    <div class="col-md-4 d-flex flex-column">
       <label class="form-label" for="id_owner_name">ПІБ</label>
       {{ form.name }}
       <div class="text-danger small mt-1" style="min-height: 1.25em;">
@@ -69,7 +71,7 @@ document.getElementById('id_complex_filter').addEventListener('change', function
       </div>
     </div>
 
-    <div class="col-md-5 d-flex flex-column">
+    <div class="col-md-4 d-flex flex-column">
       <label class="form-label" for="id_owner_phone">Телефон</label>
       {{ form.phone }}
       <div class="text-danger small mt-1" style="min-height: 1.25em;">
@@ -79,7 +81,17 @@ document.getElementById('id_complex_filter').addEventListener('change', function
       </div>
     </div>
 
-    <div class="col-md-2 pt-4">
+    <div class="col-md-3 d-flex flex-column">
+      <label class="form-label" for="id_owner_complex">ЖК</label>
+      {{ form.complex }}
+      <div class="text-danger small mt-1" style="min-height: 1.25em;">
+        {% if form.complex.errors %}
+          {{ form.complex.errors.0 }}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-md-1 pt-4">
       <button class="btn btn-success w-100" type="submit">Додати</button>
     </div>
   </div>

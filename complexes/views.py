@@ -315,14 +315,14 @@ def entrance_add_apartment(request, complex_pk, entrance_id):
         return HttpResponseForbidden("Немає доступу.")
 
     if request.method == 'POST':
-        form = ApartmentForm(request.POST)
+        form = ApartmentForm(request.POST, complex_obj=complex_obj)
         if form.is_valid():
             apt = form.save(commit=False)
             apt.entrance = entrance
             apt.save()
             return redirect('complex_detail', pk=complex_pk)
     else:
-        form = ApartmentForm()
+        form = ApartmentForm(complex_obj=complex_obj)
 
     return render(request, 'complexes/simple_form.html', {
         'title': f"Додати квартиру у під'їзд {entrance.number}",
@@ -338,12 +338,12 @@ def apartment_edit(request, pk):
         return HttpResponseForbidden("Немає доступу.")
 
     if request.method == 'POST':
-        form = ApartmentForm(request.POST, instance=apt)
+        form = ApartmentForm(request.POST, instance=apt, complex_obj=complex_obj)
         if form.is_valid():
             form.save()
             return redirect('complex_detail', pk=complex_obj.pk)
     else:
-        form = ApartmentForm(instance=apt)
+        form = ApartmentForm(instance=apt, complex_obj=complex_obj)
 
     return render(request, 'complexes/simple_form.html', {
         'title': f"Редагувати кв. {apt.number}",
@@ -622,26 +622,24 @@ def owner_edit(request, pk):
         return redirect('owners_list')
 
     # Перевірка прав
+    form_kwargs = {}
     if is_superadmin(request.user):
         pass
     else:
         complex_obj = get_complex_for_admin(request.user)
         if not complex_obj:
             return HttpResponseForbidden("Немає доступу.")
-        has_apartment_in_complex = Apartment.objects.filter(
-            owner=owner,
-            entrance__building__complex=complex_obj,
-        ).exists()
-        if not has_apartment_in_complex:
+        form_kwargs['complex_obj'] = complex_obj
+        if owner.complex_id != complex_obj.pk:
             return HttpResponseForbidden("Немає доступу.")
 
     if request.method == 'POST':
-        form = OwnerForm(request.POST, instance=owner)
+        form = OwnerForm(request.POST, instance=owner, **form_kwargs)
         if form.is_valid():
             form.save()
             return redirect('owners_list')
     else:
-        form = OwnerForm(instance=owner)
+        form = OwnerForm(instance=owner, **form_kwargs)
 
     return render(request, 'complexes/simple_form.html', {
         'title': f"Редагувати власника: {owner.name}",
@@ -666,11 +664,7 @@ def owner_delete(request, pk):
         complex_obj = get_complex_for_admin(request.user)
         if not complex_obj:
             return HttpResponseForbidden("Немає доступу.")
-        has_apartment_in_complex = Apartment.objects.filter(
-            owner=owner,
-            entrance__building__complex=complex_obj,
-        ).exists()
-        if not has_apartment_in_complex:
+        if owner.complex_id != complex_obj.pk:
             return HttpResponseForbidden("Немає доступу.")
 
     if request.method == 'POST':

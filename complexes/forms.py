@@ -13,8 +13,8 @@ letters_validator = RegexValidator(
 
 def validate_phone_or_email(value):
     phone_validator = RegexValidator(
-        r'^\d+$',
-        'Телефон повинен містити тільки цифри'
+        r'^\+?\d+$',
+        'Телефон повинен містити цифри, допускається + на початку'
     )
     email_validator = EmailValidator('Некоректний email')
 
@@ -25,7 +25,7 @@ def validate_phone_or_email(value):
             email_validator(value)  
         except ValidationError:
             raise ValidationError(
-                'Введіть або номер телефону (лише цифри), або EMAIL'
+                'Введіть або номер телефону (цифри, можна з + на початку), або EMAIL'
             )
 
 
@@ -105,18 +105,24 @@ class ApartmentForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        complex_obj = kwargs.pop('complex_obj', None)
         super().__init__(*args, **kwargs)
         self.fields['owner'].required = False
+        if complex_obj is not None:
+            self.fields['owner'].queryset = Owner.objects.filter(
+                complex=complex_obj
+            ).order_by('name')
 
 
 
 class OwnerForm(forms.ModelForm):
     class Meta:
         model = Owner
-        fields = ['name', 'phone']
+        fields = ['name', 'phone', 'complex']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'complex': forms.Select(attrs={'class': 'form-select'}),
         }
         labels = {
             'name': "Ім'я",
@@ -124,9 +130,17 @@ class OwnerForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        complex_obj = kwargs.pop('complex_obj', None)
         super().__init__(*args, **kwargs)
         self.fields['name'].validators = [letters_validator]
         self.fields['phone'].validators = [validate_phone_or_email]
+        self.fields['complex'].label = 'ЖК'
+        self.fields['complex'].required = True
+        if complex_obj is not None:
+            self.fields['complex'].queryset = ResidentialComplex.objects.filter(
+                pk=complex_obj.pk
+            )
+            self.fields['complex'].initial = complex_obj
 
 
 class ResidentForm(forms.ModelForm):

@@ -33,7 +33,7 @@ def dashboard(request):
     if hasattr(user, 'complex_admin_profile'):
         complex_id = user.complex_admin_profile.complex_id
         owner_accounts = OwnerAccount.objects.filter(
-            owner__apartments__entrance__building__complex_id=complex_id
+            owner__complex_id=complex_id
         ).select_related('user', 'owner').distinct()
         staff_accounts = StaffAccount.objects.filter(
             staff__complex_id=complex_id

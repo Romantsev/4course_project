@@ -53,7 +53,7 @@ def _user_can_manage_owner_account(user, owner_account: OwnerAccount) -> bool:
     complex_obj = get_complex_for_admin(user)
     if complex_obj is None:
         return False
-    return owner_account.owner.apartments.filter(entrance__building__complex=complex_obj).exists()
+    return owner_account.owner.complex_id == complex_obj.pk
 
 
 @login_required

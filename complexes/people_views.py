@@ -24,17 +24,12 @@ def owners_list(request):
         else:
             form = OwnerForm()
 
-        owners_qs = Owner.objects.all().order_by("name")
+        owners_qs = Owner.objects.select_related("complex").order_by("name")
 
         if selected_complex:
             try:
                 cid = int(selected_complex)
-                owners_qs = (
-                    owners_qs.filter(
-                        apartments__entrance__building__complex__complex_id=cid
-                    )
-                    .distinct()
-                )
+                owners_qs = owners_qs.filter(complex__complex_id=cid)
             except (ValueError, TypeError):
                 pass
 
@@ -44,17 +39,17 @@ def owners_list(request):
         complex_obj = get_complex_for_admin(request.user)
 
         if request.method == "POST":
-            form = OwnerForm(request.POST)
+            form = OwnerForm(request.POST, complex_obj=complex_obj)
             if form.is_valid():
                 form.save()
                 return redirect("owners_list")
         else:
-            form = OwnerForm()
+            form = OwnerForm(complex_obj=complex_obj)
 
         owners = (
-            Owner.objects.filter(apartments__entrance__building__complex=complex_obj)
+            Owner.objects.select_related("complex")
+            .filter(complex=complex_obj)
             .order_by("name")
-            .distinct()
         )
         selected_complex = complex_obj.complex_id
     else:

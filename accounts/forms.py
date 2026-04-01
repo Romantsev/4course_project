@@ -61,9 +61,7 @@ class OwnerAccountCreateForm(BaseUserCreateForm):
 
         qs = Owner.objects.filter(account__isnull=True)
         if complex_obj:
-            qs = qs.filter(
-                apartments__entrance__building__complex=complex_obj
-            ).distinct()
+            qs = qs.filter(complex=complex_obj)
         self.fields['owner'].queryset = qs
 
 

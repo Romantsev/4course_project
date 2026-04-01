@@ -60,6 +60,14 @@ class Owner(models.Model):
     owner_id = models.AutoField(primary_key=True)
     name = models.TextField()
     phone = models.TextField(blank=True, null=True)
+    complex = models.ForeignKey(
+        ResidentialComplex,
+        on_delete=models.CASCADE,
+        db_column='complex_id',
+        related_name='owners',
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         db_table = 'owner'
