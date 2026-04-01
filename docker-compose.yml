@@ -1,9 +1,8 @@
-version: '3.9'
-
 services:
   db:
     image: postgres:15
     container_name: postgres_db
+    restart: unless-stopped
     environment:
       POSTGRES_DB: course_db
       POSTGRES_USER: postgres
@@ -12,10 +11,16 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d course_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   web:
     build: .
     container_name: django_app
+    restart: unless-stopped
     command: >
       sh -c "python manage.py migrate &&
              gunicorn residence_manager.wsgi:application --bind 0.0.0.0:8000"
@@ -24,7 +29,8 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - DEBUG=True
       - SECRET_KEY=b+3_opk%7fmwo3y_$*h_a_+bh1sh@wixdm@0j13ke9scimgedt

@@ -40,8 +40,4 @@ class Migration(migrations.Migration):
             name='status',
             field=models.CharField(choices=[('free', 'Вільна'), ('occupied', 'Зайнята'), ('reserved', 'Зарезервована')], default='free', max_length=20),
         ),
-        migrations.AlterModelTable(
-            name='storageroom',
-            table=None,
-        ),
     ]

@@ -60,6 +60,11 @@
                                class="ms-2 text-primary text-decoration-none">
                                 редагувати
                             </a>
+                            |
+                            <a href="{% url 'apartment_delete' a.pk %}"
+                               class="ms-2 text-danger text-decoration-none">
+                                видалити
+                            </a>
                         </li>
                     {% endfor %}
                 </ul>

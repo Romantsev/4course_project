@@ -351,6 +351,7 @@ def apartment_delete(request, pk):
     apt = get_object_or_404(Apartment, pk=pk)
     complex_obj = apt.entrance.building.complex
 
+    # Видаляти квартири може супер-адмін або адміністратор цього ЖК
     if not user_can_manage_complex(request.user, complex_obj):
         return HttpResponseForbidden("Немає доступу.")
 
@@ -488,11 +489,6 @@ def storage_list(request):
             'selected_complex_id': selected_complex_id,
         },
     )
-
-
-
-
-
 def storage_edit(request, pk):
     storage = get_object_or_404(
         StorageRoom.objects.select_related(
@@ -567,10 +563,6 @@ def storage_edit(request, pk):
             'apartments': apartments,
         },
     )
-
-
-
-
 
 
 def storage_delete(request, pk):
