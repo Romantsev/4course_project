@@ -51,6 +51,10 @@ def _has_technician_access(user):
     )
 
 
+def _has_storage_access(user):
+    return is_superadmin(user) or is_complex_admin(user)
+
+
 # =========================
 #  ГОЛОВНА: СПИСОК ЖК
 # =========================
@@ -408,6 +412,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import StorageRoom, Apartment
 
 def storage_list(request):
+    if not _has_storage_access(request.user):
+        return HttpResponseForbidden("РќРµРґРѕСЃС‚Р°С‚РЅСЊРѕ РїСЂР°РІ РґРѕСЃС‚СѓРїСѓ.")
+
 
     # --- всі ЖК (буде звужено для адміна ЖК) ---
     complexes_qs = ResidentialComplex.objects.order_by('name')
@@ -490,6 +497,9 @@ def storage_list(request):
         },
     )
 def storage_edit(request, pk):
+    if not _has_storage_access(request.user):
+        return HttpResponseForbidden("РќРµРґРѕСЃС‚Р°С‚РЅСЊРѕ РїСЂР°РІ РґРѕСЃС‚СѓРїСѓ.")
+
     storage = get_object_or_404(
         StorageRoom.objects.select_related(
             'apartment',
@@ -566,6 +576,9 @@ def storage_edit(request, pk):
 
 
 def storage_delete(request, pk):
+    if not _has_storage_access(request.user):
+        return HttpResponseForbidden("РќРµРґРѕСЃС‚Р°С‚РЅСЊРѕ РїСЂР°РІ РґРѕСЃС‚СѓРїСѓ.")
+
     storage = get_object_or_404(
         StorageRoom.objects.select_related(
             'apartment',

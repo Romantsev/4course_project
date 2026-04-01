@@ -1,4 +1,3 @@
-from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 
@@ -7,7 +6,6 @@ from .models import Visitor, Apartment, ResidentialComplex
 from .forms import VisitorForm as _VisitorForm
 
 
-@login_required
 def visitors_list(request):
     user = request.user
 
