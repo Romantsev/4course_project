@@ -1,10 +1,10 @@
 from accounts.forms import OwnerAccountCreateForm
-from accounts.models import OwnerAccount
+from accounts.models import ComplexAdminProfile, OwnerAccount
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from complexes.forms import OwnerForm, ParkingSpotForm
-from complexes.models import Building, Entrance, Owner, ParkingZone, ResidentialComplex
+from complexes.models import Apartment, Building, Entrance, Owner, ParkingZone, ResidentialComplex, Visitor
 
 
 User = get_user_model()
@@ -116,3 +116,38 @@ class ParkingSpotFormTests(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn('owner', form.errors)
+
+
+class VisitorDeleteAccessTests(TestCase):
+    def setUp(self):
+        self.complex_one = ResidentialComplex.objects.create(name='A', address='Addr A')
+        self.complex_two = ResidentialComplex.objects.create(name='B', address='Addr B')
+
+        building_one = Building.objects.create(number=1, floors=9, complex=self.complex_one)
+        entrance_one = Entrance.objects.create(number=1, building=building_one)
+        self.apartment_one = Apartment.objects.create(number=101, floor=1, rooms=2, entrance=entrance_one)
+
+        building_two = Building.objects.create(number=2, floors=9, complex=self.complex_two)
+        entrance_two = Entrance.objects.create(number=1, building=building_two)
+        self.apartment_two = Apartment.objects.create(number=201, floor=2, rooms=3, entrance=entrance_two)
+
+        self.complex_admin_user = User.objects.create_user(username='complex-admin', password='pass12345')
+        ComplexAdminProfile.objects.create(user=self.complex_admin_user, complex=self.complex_one)
+
+    def test_complex_admin_can_delete_visitor_from_own_complex(self):
+        visitor = Visitor.objects.create(fullname='Visitor One', apartment=self.apartment_one)
+
+        self.client.force_login(self.complex_admin_user)
+        response = self.client.post(reverse('visitor_delete', args=[visitor.pk]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Visitor.objects.filter(pk=visitor.pk).exists())
+
+    def test_complex_admin_cannot_delete_visitor_from_other_complex(self):
+        visitor = Visitor.objects.create(fullname='Visitor Two', apartment=self.apartment_two)
+
+        self.client.force_login(self.complex_admin_user)
+        response = self.client.post(reverse('visitor_delete', args=[visitor.pk]))
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(Visitor.objects.filter(pk=visitor.pk).exists())
