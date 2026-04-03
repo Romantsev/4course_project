@@ -3,8 +3,8 @@ from accounts.models import OwnerAccount
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-from complexes.forms import OwnerForm
-from complexes.models import Owner, ResidentialComplex
+from complexes.forms import OwnerForm, ParkingSpotForm
+from complexes.models import Building, Entrance, Owner, ParkingZone, ResidentialComplex
 
 
 User = get_user_model()
@@ -85,3 +85,34 @@ class OwnerBindingTests(TestCase):
                 response = self.client.get(url)
 
                 self.assertEqual(response.status_code, 403)
+
+
+class ParkingSpotFormTests(TestCase):
+    def setUp(self):
+        self.complex_one = ResidentialComplex.objects.create(name='A', address='Addr A')
+        self.complex_two = ResidentialComplex.objects.create(name='B', address='Addr B')
+        building = Building.objects.create(number=1, floors=9, complex=self.complex_one)
+        entrance = Entrance.objects.create(number=1, building=building)
+        self.zone = ParkingZone.objects.create(type='indoor', location='L1', entrance=entrance)
+        self.owner_allowed = Owner.objects.create(name='Allowed Owner', complex=self.complex_one)
+        self.owner_other = Owner.objects.create(name='Other Owner', complex=self.complex_two)
+
+    def test_parking_spot_form_limits_owners_to_current_complex(self):
+        form = ParkingSpotForm(complex_obj=self.complex_one)
+
+        self.assertIn(self.owner_allowed, form.fields['owner'].queryset)
+        self.assertNotIn(self.owner_other, form.fields['owner'].queryset)
+
+    def test_parking_spot_form_rejects_owner_from_other_complex(self):
+        form = ParkingSpotForm(
+            data={
+                'number': 1,
+                'status': 'active',
+                'parking_zone': self.zone.pk,
+                'owner': self.owner_other.pk,
+            },
+            complex_obj=self.complex_one,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('owner', form.errors)

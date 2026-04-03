@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseForbidden
 
-from .models import ParkingZone, ParkingSpot, Entrance, ResidentialComplex
+from .models import ParkingZone, ParkingSpot, Entrance, Owner, ResidentialComplex
 from .forms import ParkingZoneForm, ParkingSpotForm
 from accounts.utils import is_superadmin, is_complex_admin, get_complex_for_admin
 
@@ -60,6 +60,9 @@ def parking_list(request):
                     spot_form.fields['parking_zone'].queryset = ParkingZone.objects.filter(
                         entrance__building__complex_id=cid
                     ).order_by('parking_zone_id')
+                    spot_form.fields['owner'].queryset = Owner.objects.filter(
+                        complex_id=cid
+                    ).order_by('name')
 
     elif is_complex_admin(request.user):
         complex_obj = get_complex_for_admin(request.user)
@@ -86,29 +89,23 @@ def parking_list(request):
         if request.method == 'POST':
             if request.POST.get('add_zone'):
                 zone_form = ParkingZoneForm(request.POST)
-                spot_form = ParkingSpotForm()
+                spot_form = ParkingSpotForm(complex_obj=complex_obj)
             elif request.POST.get('add_spot'):
-                spot_form = ParkingSpotForm(request.POST)
+                spot_form = ParkingSpotForm(request.POST, complex_obj=complex_obj)
                 zone_form = ParkingZoneForm()
             else:
                 zone_form = ParkingZoneForm()
-                spot_form = ParkingSpotForm()
+                spot_form = ParkingSpotForm(complex_obj=complex_obj)
         else:
             zone_form = ParkingZoneForm()
-            spot_form = ParkingSpotForm()
+            spot_form = ParkingSpotForm(complex_obj=complex_obj)
 
         # обмежуємо вибір лише об'єктами поточного ЖК
         entrances_qs = Entrance.objects.filter(
             building__complex=complex_obj
         ).order_by('building__number', 'number')
-        zones_qs = ParkingZone.objects.filter(
-            entrance__building__complex=complex_obj
-        ).order_by('parking_zone_id')
-
         if zone_form is not None:
             zone_form.fields['entrance'].queryset = entrances_qs
-        if spot_form is not None:
-            spot_form.fields['parking_zone'].queryset = zones_qs
 
         if request.method == 'POST':
             if request.POST.get('add_zone') and zone_form.is_valid():
@@ -218,20 +215,22 @@ def parking_spot_edit(request, pk):
         return HttpResponseForbidden("Доступ заборонено.")
 
     if request.method == 'POST':
-        form = ParkingSpotForm(request.POST, instance=spot)
+        form = ParkingSpotForm(request.POST, instance=spot, complex_obj=complex_obj)
         if complex_obj is not None:
-            form.fields['parking_zone'].queryset = ParkingZone.objects.filter(
-                entrance__building__complex=complex_obj
-            ).order_by('parking_zone_id')
+            if spot.owner_id and spot.owner.complex_id != complex_obj.pk:
+                form.fields['owner'].queryset = (
+                    form.fields['owner'].queryset | Owner.objects.filter(pk=spot.owner_id)
+                ).distinct()
         if form.is_valid():
             form.save()
             return redirect('parking_list')
     else:
-        form = ParkingSpotForm(instance=spot)
+        form = ParkingSpotForm(instance=spot, complex_obj=complex_obj)
         if complex_obj is not None:
-            form.fields['parking_zone'].queryset = ParkingZone.objects.filter(
-                entrance__building__complex=complex_obj
-            ).order_by('parking_zone_id')
+            if spot.owner_id and spot.owner.complex_id != complex_obj.pk:
+                form.fields['owner'].queryset = (
+                    form.fields['owner'].queryset | Owner.objects.filter(pk=spot.owner_id)
+                ).distinct()
     return render(request, 'complexes/simple_form.html', {
         'title': f"Редагувати паркомісце №{spot.number}",
         'form': form,

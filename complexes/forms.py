@@ -245,6 +245,28 @@ class ParkingSpotForm(forms.ModelForm):
         }
 
 
+    def __init__(self, *args, **kwargs):
+        complex_obj = kwargs.pop('complex_obj', None)
+        super().__init__(*args, **kwargs)
+        if complex_obj is not None:
+            self.fields['parking_zone'].queryset = ParkingZone.objects.filter(
+                entrance__building__complex=complex_obj
+            ).order_by('parking_zone_id')
+            self.fields['owner'].queryset = Owner.objects.filter(
+                complex=complex_obj
+            ).order_by('name')
+
+    def clean(self):
+        cleaned = super().clean()
+        parking_zone = cleaned.get('parking_zone')
+        owner = cleaned.get('owner')
+        if parking_zone and owner:
+            zone_complex_id = parking_zone.entrance.building.complex_id
+            if owner.complex_id != zone_complex_id:
+                self.add_error('owner', 'Власник має належати до того ж ЖК, що і паркомісце.')
+        return cleaned
+
+
 from .models import StorageRoom
 from .models import MaintenanceRequest
 
