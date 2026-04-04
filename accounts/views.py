@@ -55,9 +55,11 @@ def dashboard(request):
         })
 
     if hasattr(user, 'staff_account'):
-        staff = user.staff_account.staff
+        staff_account = user.staff_account
+        staff = staff_account.staff
         return render(request, 'accounts/dashboard_staff.html', {
             'staff': staff,
+            'access_type': staff_account.access_type,
         })
 
     return render(request, 'accounts/dashboard_generic.html')
