@@ -33,6 +33,27 @@ def _has_storage_access(user):
     return is_superadmin(user) or is_complex_admin(user)
 
 
+def _storage_redirect(selected_complex_id=None):
+    if selected_complex_id:
+        return redirect(f"/storage/?complex={selected_complex_id}")
+    return redirect('storage_list')
+
+
+def _get_storage_apartments(selected_complex_id=None):
+    apartments = Apartment.objects.select_related(
+        'entrance', 'entrance__building', 'entrance__building__complex'
+    )
+    if selected_complex_id:
+        apartments = apartments.filter(
+            entrance__building__complex_id=selected_complex_id
+        )
+    return apartments.order_by(
+        'entrance__building__number',
+        'entrance__number',
+        'number',
+    )
+
+
 # =========================
 #  ГОЛОВНА: СПИСОК ЖК
 # =========================
@@ -354,9 +375,7 @@ def storage_list(request):
     complexes_qs = ResidentialComplex.objects.order_by('name')
 
     # --- вибраний ЖК із GET (для супер-адміна) ---
-    selected_complex_id = request.GET.get("complex")
-    if selected_complex_id:
-        selected_complex_id = str(selected_complex_id)
+    selected_complex_id = (request.GET.get("complex") or "").strip() or None
 
     # --- якщо користувач адміністратор ЖК, фіксуємо його комплекс ---
     if is_complex_admin(request.user):
@@ -383,20 +402,7 @@ def storage_list(request):
         )
 
     # — квартири для форми додавання —
-    apartments = Apartment.objects.select_related(
-        'entrance', 'entrance__building'
-    )
-
-    if selected_complex_id:
-        apartments = apartments.filter(
-            entrance__building__complex_id=selected_complex_id
-        )
-
-    apartments = apartments.order_by(
-        'entrance__building__number',
-        'entrance__number',
-        'number'
-    )
+    apartments = _get_storage_apartments(selected_complex_id)
 
     # — Додавання комірки —
     if request.method == 'POST':
@@ -405,20 +411,29 @@ def storage_list(request):
         status = request.POST.get('status') or 'free'
         apartment_id = (request.POST.get('apartment') or '').strip()
 
-        if number:
-            storage = StorageRoom(
+        apartment = None
+        error_message = None
+        if not number:
+            error_message = "Номер комірки є обов'язковим."
+        elif apartment_id:
+            apartment = apartments.filter(pk=apartment_id).first()
+            if apartment is None:
+                error_message = "Квартира має належати вибраному ЖК."
+        elif selected_complex_id:
+            error_message = "Для комірки в межах ЖК потрібно вибрати квартиру."
+
+        if error_message:
+            messages.error(request, error_message)
+        else:
+            StorageRoom.objects.create(
                 number=number,
                 location=location,
                 status=status,
+                apartment=apartment,
             )
-            if apartment_id:
-                storage.apartment_id = int(apartment_id)
-            storage.save()
 
         # Повертаємось із збереженням параметра ЖК
-        if selected_complex_id:
-            return redirect(f"/storage/?complex={selected_complex_id}")
-        return redirect('storage_list')
+            return _storage_redirect(selected_complex_id)
 
     return render(
         request,
@@ -449,6 +464,7 @@ def storage_edit(request, pk):
 
     # --- перевірка доступу та поточний ЖК ---
     selected_complex_id = None
+    selected_complex = None
     if is_complex_admin(request.user):
         complex_obj = get_complex_for_admin(request.user)
         if not complex_obj:
@@ -459,28 +475,22 @@ def storage_edit(request, pk):
             or storage.apartment.entrance.building.complex_id != complex_obj.pk
         ):
             return HttpResponseForbidden("Немає доступу.")
-        selected_complex_id = complex_obj.pk
+        selected_complex_id = str(complex_obj.pk)
         complexes = complexes_qs.filter(pk=complex_obj.pk)
+        selected_complex = complex_obj
     else:
         complexes = complexes_qs
-        selected_complex_id = request.POST.get('complex') or (
-            storage.apartment.entrance.building.complex.pk
+        selected_complex_id = (request.GET.get('complex') or '').strip() or (
+            request.POST.get('complex') or ''
+        ).strip() or (
+            str(storage.apartment.entrance.building.complex.pk)
             if storage.apartment else None
         )
-
-    selected_complex = None
-    if selected_complex_id:
-        selected_complex = ResidentialComplex.objects.filter(pk=selected_complex_id).first()
+        if selected_complex_id:
+            selected_complex = ResidentialComplex.objects.filter(pk=selected_complex_id).first()
 
     # --- фільтруємо квартири по ЖК ---
-    apartments = Apartment.objects.none()
-    if selected_complex:
-        apartments = (
-            Apartment.objects
-            .select_related('entrance', 'entrance__building')
-            .filter(entrance__building__complex=selected_complex)
-            .order_by('entrance__building__number', 'entrance__number', 'number')
-        )
+    apartments = _get_storage_apartments(selected_complex_id) if selected_complex_id else _get_storage_apartments()
 
     # ====== POST SAVE ======
     if request.method == 'POST':
@@ -488,14 +498,24 @@ def storage_edit(request, pk):
         storage.location = (request.POST.get('location') or '').strip()
         storage.status = request.POST.get('status') or 'free'
 
-        apt_id = request.POST.get('apartment')
-        if apt_id:
-            storage.apartment_id = int(apt_id)
-        else:
-            storage.apartment = None
+        apartment_id = (request.POST.get('apartment') or '').strip()
+        apartment = None
+        error_message = None
+        if not storage.number:
+            error_message = "Номер комірки є обов'язковим."
+        elif apartment_id:
+            apartment = apartments.filter(pk=apartment_id).first()
+            if apartment is None:
+                error_message = "Квартира має належати вибраному ЖК."
+        elif selected_complex_id:
+            error_message = "Для комірки в межах ЖК потрібно вибрати квартиру."
 
-        storage.save()
-        return redirect('storage_list')
+        if error_message:
+            messages.error(request, error_message)
+        else:
+            storage.apartment = apartment
+            storage.save()
+            return _storage_redirect(selected_complex_id)
 
     return render(
         request,

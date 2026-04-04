@@ -6,7 +6,7 @@
 
 <h5>Твої квартири</h5>
 <ul>
-    {% for a in owner.apartments.all %}
+    {% for a in apartments %}
         <li>
             ЖК {{ a.entrance.building.complex.name }},
             буд. {{ a.entrance.building.number }},
