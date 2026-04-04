@@ -154,4 +154,22 @@ class OwnerAccountUpdateForm(BaseUserUpdateForm):
 
 
 class StaffAccountUpdateForm(BaseUserUpdateForm):
-    pass
+    access_type = forms.ChoiceField(
+        choices=StaffAccount.ACCESS_CHOICES,
+        label='Права доступу',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.account = kwargs.pop('account', None)
+        super().__init__(*args, **kwargs)
+        if self.account is not None:
+            self.fields['access_type'].initial = self.account.access_type
+
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        if self.account is not None:
+            self.account.access_type = self.cleaned_data['access_type']
+            if commit:
+                self.account.save(update_fields=['access_type'])
+        return user

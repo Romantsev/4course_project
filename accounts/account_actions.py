@@ -111,13 +111,13 @@ def edit_staff_account(request, pk):
         return HttpResponseForbidden()
 
     if request.method == 'POST':
-        form = StaffAccountUpdateForm(request.POST, instance=account.user)
+        form = StaffAccountUpdateForm(request.POST, instance=account.user, account=account)
         if form.is_valid():
             form.save()
             messages.success(request, "Обліковий запис співробітника оновлено.")
             return redirect('accounts:dashboard')
     else:
-        form = StaffAccountUpdateForm(instance=account.user)
+        form = StaffAccountUpdateForm(instance=account.user, account=account)
 
     return render(request, 'accounts/create_user.html', {
         'title': 'Редагувати акаунт співробітника',
@@ -139,4 +139,5 @@ def delete_staff_account(request, pk):
     return render(request, 'complexes/confirm_delete.html', {
         'title': 'Видалити акаунт співробітника?'
     })
+
 
