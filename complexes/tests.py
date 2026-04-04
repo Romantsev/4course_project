@@ -151,3 +151,10 @@ class VisitorDeleteAccessTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertTrue(Visitor.objects.filter(pk=visitor.pk).exists())
+
+    def test_complex_admin_can_open_visitors_list(self):
+        self.client.force_login(self.complex_admin_user)
+
+        response = self.client.get(reverse('visitors_list'))
+
+        self.assertEqual(response.status_code, 200)

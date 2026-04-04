@@ -1,22 +1,16 @@
 # complexes/views.py
 
-from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponseForbidden
 from django.contrib import messages
-from django.db.models import Q, Prefetch
-from django.shortcuts import render, get_object_or_404, redirect
+from django.db.models import Prefetch, Q
 from django.http import HttpResponseForbidden
-from complexes.models import ResidentialComplex
+from django.shortcuts import get_object_or_404, redirect, render
 from .models import (
     ResidentialComplex,
     Building,
     Entrance,
     Apartment,
     Owner,
-    Resident,
     Staff,
-    ParkingZone,
-    ParkingSpot,
     StorageRoom,
 )
 from .forms import (
@@ -25,11 +19,6 @@ from .forms import (
     EntranceForm,
     ApartmentForm,
     OwnerForm,
-    ResidentForm,
-    StaffForm,
-    ParkingZoneForm,
-    ParkingSpotForm,
-    StorageRoomForm,
 )
 from accounts.utils import (
     is_superadmin,
@@ -38,17 +27,6 @@ from accounts.utils import (
     user_can_manage_complex,
 )
 
-
-def _has_technician_access(user):
-    """
-    Повертає True, якщо користувач – технічний працівник (maintenance staff).
-    Використовується, щоб заборонити їм доступ до комор.
-    """
-    return (
-        user.is_authenticated
-        and hasattr(user, "staff_account")
-        and getattr(user.staff_account, "access_type", "maintenance") == "maintenance"
-    )
 
 
 def _has_storage_access(user):
@@ -366,50 +344,6 @@ def apartment_delete(request, pk):
     return render(request, 'complexes/confirm_delete.html', {
         'title': f"Видалити кв. {apt.number}?",
     })
-
-
-# =========================
-#  ДОВІДКОВІ СПИСКИ (тільки SuperAdmin)
-# =========================
-
-def owners_list(request):
-    if not is_superadmin(request.user):
-        return HttpResponseForbidden("Немає доступу.")
-    owners = Owner.objects.all().order_by('name')
-    return render(request, 'complexes/owners_list.html', {'owners': owners})
-
-
-def residents_list(request):
-    if not is_superadmin(request.user):
-        return HttpResponseForbidden("Немає доступу.")
-    residents = Resident.objects.select_related('apartment').order_by('fullname')
-    return render(request, 'complexes/residents_list.html', {'residents': residents})
-
-
-def staff_list(request):
-    if not is_superadmin(request.user):
-        return HttpResponseForbidden("Немає доступу.")
-    staff = Staff.objects.select_related('complex').order_by('fullname')
-    return render(request, 'complexes/staff_list.html', {'staff_list': staff})
-
-
-def parking_list(request):
-    if not is_superadmin(request.user):
-        return HttpResponseForbidden("Немає доступу.")
-    zones = ParkingZone.objects.select_related('entrance').all()
-    spots = ParkingSpot.objects.select_related('parking_zone', 'owner').all()
-    zone_form = ParkingZoneForm()
-    spot_form = ParkingSpotForm()
-    return render(request, 'complexes/parking_list.html', {
-        'zones': zones,
-        'spots': spots,
-        'zone_form': zone_form,
-        'spot_form': spot_form,
-    })
-
-
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import StorageRoom, Apartment
 
 def storage_list(request):
     if not _has_storage_access(request.user):

@@ -5,8 +5,6 @@ from . import people_views
 from . import parking_views
 from . import maintenance_views
 from . import access_views
-from . import visitors_override
-from . import storage_access
 
 
 urlpatterns = [
@@ -50,9 +48,9 @@ urlpatterns = [
     path('staff/<int:pk>/delete/', people_views.staff_delete, name='staff_delete'),
 
     # Комори
-    path('storage/', storage_access.storage_list, name='storage_list'),
-    path('storage/<int:pk>/edit/', storage_access.storage_edit, name='storage_edit'),
-    path('storage/<int:pk>/delete/', storage_access.storage_delete, name='storage_delete'),
+    path('storage/', views.storage_list, name='storage_list'),
+    path('storage/<int:pk>/edit/', views.storage_edit, name='storage_edit'),
+    path('storage/<int:pk>/delete/', views.storage_delete, name='storage_delete'),
 
     # Заявки на обслуговування
     path('tickets/owner/', maintenance_views.tickets_owner_list, name='tickets_owner_list'),
@@ -63,8 +61,7 @@ urlpatterns = [
     path('tickets/<int:pk>/delete/', maintenance_views.ticket_delete, name='ticket_delete'),
 
     # Відвідувачі (охорона)
-    path('visitors/', visitors_override.visitors_list, name='visitors_list'),
+    path('visitors/', access_views.visitors_list, name='visitors_list'),
     path('residents/quick-add/', access_views.resident_quick_add, name='resident_quick_add'),
     path('visitor/<int:pk>/delete/', access_views.visitor_delete, name='visitor_delete'),
 ]
-
