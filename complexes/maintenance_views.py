@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponseForbidden
+from residence_manager.responses import forbidden_response
 from django.db.models import Prefetch
 
 from .models import MaintenanceRequest
@@ -21,7 +21,7 @@ def _has_technician_access(user):
 @login_required
 def tickets_owner_list(request):
     if not _is_owner(request.user):
-        return HttpResponseForbidden("Доступ заборонено.")
+        return forbidden_response(request)
 
     owner = request.user.owner_account.owner
     tickets = (
@@ -40,7 +40,7 @@ def tickets_owner_list(request):
 @login_required
 def ticket_create(request):
     if not _is_owner(request.user):
-        return HttpResponseForbidden("Доступ заборонено.")
+        return forbidden_response(request)
 
     owner = request.user.owner_account.owner
 
@@ -64,7 +64,7 @@ def ticket_create(request):
 @login_required
 def tickets_staff_list(request):
     if not _has_technician_access(request.user):
-        return HttpResponseForbidden("Доступ заборонено.")
+        return forbidden_response(request)
 
     staff = request.user.staff_account.staff
     complex_id = staff.complex_id
@@ -97,7 +97,7 @@ def tickets_staff_list(request):
 @login_required
 def ticket_take(request, pk):
     if not _has_technician_access(request.user):
-        return HttpResponseForbidden("Доступ заборонено.")
+        return forbidden_response(request)
 
     staff = request.user.staff_account.staff
     ticket = get_object_or_404(
@@ -119,7 +119,7 @@ def ticket_take(request, pk):
 @login_required
 def ticket_done(request, pk):
     if not _has_technician_access(request.user):
-        return HttpResponseForbidden("Доступ заборонено.")
+        return forbidden_response(request)
 
     staff = request.user.staff_account.staff
     ticket = get_object_or_404(
@@ -141,7 +141,7 @@ def ticket_done(request, pk):
 @login_required
 def ticket_delete(request, pk):
     if not _has_technician_access(request.user):
-        return HttpResponseForbidden("Доступ заборонено.")
+        return forbidden_response(request)
 
     staff = request.user.staff_account.staff
     ticket = get_object_or_404(
@@ -151,7 +151,7 @@ def ticket_delete(request, pk):
     )
 
     if ticket.status != 'done':
-        return HttpResponseForbidden("Видаляти можна лише виконані заявки.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         ticket.delete()

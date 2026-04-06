@@ -1,5 +1,8 @@
-from django.db import models
+from urllib.parse import quote
+
 from django.conf import settings
+from django.core import signing
+from django.db import models
 
 class ResidentialComplex(models.Model):
     complex_id = models.AutoField(primary_key=True)
@@ -248,6 +251,22 @@ class Visitor(models.Model):
     class Meta:
         db_table = 'complexes_visitor'
         managed = False
+
+    QR_SIGNING_SALT = 'complexes.visitor.qr'
+    QR_IMAGE_BASE_URL = 'https://api.qrserver.com/v1/create-qr-code/'
+
+    def get_qr_token(self):
+        if self.pk is None:
+            raise ValueError('Visitor must be saved before generating a QR token.')
+        return signing.dumps(self.pk, salt=self.QR_SIGNING_SALT)
+
+    def get_qr_image_url(self, size=260):
+        token = quote(self.get_qr_token(), safe='')
+        return f'{self.QR_IMAGE_BASE_URL}?size={size}x{size}&data={token}'
+
+    @classmethod
+    def parse_qr_token(cls, token):
+        return signing.loads(token, salt=cls.QR_SIGNING_SALT)
 
 class MaintenanceRequest(models.Model):
     STATUS_CHOICES = [

@@ -1,4 +1,4 @@
-from django.http import HttpResponseForbidden
+from residence_manager.responses import forbidden_response
 from django.shortcuts import get_object_or_404, redirect, render
 
 from accounts.utils import get_complex_for_admin, is_complex_admin, is_superadmin
@@ -53,7 +53,7 @@ def owners_list(request):
         )
         selected_complex = complex_obj.complex_id
     else:
-        return HttpResponseForbidden("Недостатньо прав доступу.")
+        return forbidden_response(request)
 
     return render(
         request,
@@ -145,7 +145,7 @@ def residents_list(request):
         selected_complex = complex_obj.complex_id
 
     else:
-        return HttpResponseForbidden("Недостатньо прав доступу.")
+        return forbidden_response(request)
 
     return render(
         request,
@@ -184,7 +184,7 @@ def staff_list(request):
         staff = Staff.objects.filter(complex=complex_obj).order_by("fullname")
 
     else:
-        return HttpResponseForbidden("Недостатньо прав доступу.")
+        return forbidden_response(request)
 
     return render(
         request,
@@ -207,7 +207,7 @@ def resident_edit(request, pk):
     elif is_complex_admin(request.user):
         complex_obj = get_complex_for_admin(request.user)
         if complex_obj is None:
-            return HttpResponseForbidden("Недостатньо прав доступу.")
+            return forbidden_response(request)
         resident = get_object_or_404(
             residents_qs,
             pk=pk,
@@ -223,7 +223,7 @@ def resident_edit(request, pk):
         )
         form_kwargs = {"complex_obj": staff.complex}
     else:
-        return HttpResponseForbidden("Недостатньо прав доступу.")
+        return forbidden_response(request)
 
     if request.method == "POST":
         form = ResidentForm(request.POST, instance=resident, **form_kwargs)
@@ -253,7 +253,7 @@ def resident_delete(request, pk):
     elif is_complex_admin(request.user):
         complex_obj = get_complex_for_admin(request.user)
         if complex_obj is None:
-            return HttpResponseForbidden("Недостатньо прав доступу.")
+            return forbidden_response(request)
         resident = get_object_or_404(
             residents_qs,
             pk=pk,
@@ -267,7 +267,7 @@ def resident_delete(request, pk):
             apartment__entrance__building__complex_id=staff.complex_id,
         )
     else:
-        return HttpResponseForbidden("Недостатньо прав доступу.")
+        return forbidden_response(request)
 
     if request.method == "POST":
         resident.delete()
@@ -290,9 +290,9 @@ def staff_edit(request, pk):
     elif is_complex_admin(request.user):
         complex_obj = get_complex_for_admin(request.user)
         if staff.complex_id != complex_obj.pk:
-            return HttpResponseForbidden("Недостатньо прав доступу.")
+            return forbidden_response(request)
     else:
-        return HttpResponseForbidden("Недостатньо прав доступу.")
+        return forbidden_response(request)
 
     if request.method == "POST":
         kwargs = {}
@@ -329,9 +329,9 @@ def staff_delete(request, pk):
     elif is_complex_admin(request.user):
         complex_obj = get_complex_for_admin(request.user)
         if staff.complex_id != complex_obj.pk:
-            return HttpResponseForbidden("Недостатньо прав доступу.")
+            return forbidden_response(request)
     else:
-        return HttpResponseForbidden("Недостатньо прав доступу.")
+        return forbidden_response(request)
 
     if request.method == "POST":
         staff.delete()

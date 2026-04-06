@@ -1,10 +1,10 @@
 from accounts.forms import OwnerAccountCreateForm
-from accounts.models import ComplexAdminProfile, OwnerAccount
+from accounts.models import ComplexAdminProfile, OwnerAccount, StaffAccount
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from complexes.forms import OwnerForm, ParkingSpotForm
-from complexes.models import Apartment, Building, Entrance, Owner, ParkingZone, ResidentialComplex, Visitor
+from complexes.models import Apartment, Building, Entrance, Owner, ParkingZone, ResidentialComplex, Staff, Visitor
 
 
 User = get_user_model()

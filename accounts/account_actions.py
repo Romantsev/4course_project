@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
+from residence_manager.responses import forbidden_response
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import (
@@ -60,7 +60,7 @@ def _user_can_manage_owner_account(user, owner_account: OwnerAccount) -> bool:
 def edit_owner_account(request, pk):
     account = get_object_or_404(OwnerAccount.objects.select_related('user', 'owner'), pk=pk)
     if not _user_can_manage_owner_account(request.user, account):
-        return HttpResponseForbidden()
+        return forbidden_response(request)
 
     if request.method == 'POST':
         form = OwnerAccountUpdateForm(request.POST, instance=account.user)
@@ -81,7 +81,7 @@ def edit_owner_account(request, pk):
 def delete_owner_account(request, pk):
     account = get_object_or_404(OwnerAccount.objects.select_related('user', 'owner'), pk=pk)
     if not _user_can_manage_owner_account(request.user, account):
-        return HttpResponseForbidden()
+        return forbidden_response(request)
 
     if request.method == 'POST':
         username = account.user.username
@@ -108,7 +108,7 @@ def _user_can_manage_staff_account(user, staff_account: StaffAccount) -> bool:
 def edit_staff_account(request, pk):
     account = get_object_or_404(StaffAccount.objects.select_related('user', 'staff'), pk=pk)
     if not _user_can_manage_staff_account(request.user, account):
-        return HttpResponseForbidden()
+        return forbidden_response(request)
 
     if request.method == 'POST':
         form = StaffAccountUpdateForm(request.POST, instance=account.user, account=account)
@@ -129,7 +129,7 @@ def edit_staff_account(request, pk):
 def delete_staff_account(request, pk):
     account = get_object_or_404(StaffAccount.objects.select_related('user', 'staff'), pk=pk)
     if not _user_can_manage_staff_account(request.user, account):
-        return HttpResponseForbidden()
+        return forbidden_response(request)
 
     if request.method == 'POST':
         username = account.user.username

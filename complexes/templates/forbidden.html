@@ -1,0 +1,16 @@
+{% extends "complexes/base.html" %}
+{% block title %}Доступ заборонено{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-md-8 col-lg-6">
+    <div class="card card-elevated">
+      <div class="card-body p-4 text-center">
+        <h3 class="mb-3">Доступ заборонено</h3>
+        <p class="text-muted mb-4">У вас немає прав для перегляду цієї сторінки.</p>
+        <a href="{% url 'complex_list' %}" class="btn btn-primary btn-pill">На головну</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

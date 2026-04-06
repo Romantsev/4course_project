@@ -2,7 +2,7 @@
 
 from django.contrib import messages
 from django.db.models import Prefetch, Q
-from django.http import HttpResponseForbidden
+from residence_manager.responses import forbidden_response
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import (
     ResidentialComplex,
@@ -71,7 +71,7 @@ def complex_list(request):
 
     if request.method == 'POST':
         if not is_superadmin(request.user):
-            return HttpResponseForbidden("Тільки системний адміністратор може створювати ЖК.")
+            return forbidden_response(request)
         form = ResidentialComplexForm(request.POST)
         if form.is_valid():
             form.save()
@@ -101,12 +101,12 @@ def complex_detail(request, pk):
     complex_obj = get_object_or_404(ResidentialComplex, pk=pk)
 
     if not user_can_manage_complex(request.user, complex_obj) and not is_superadmin(request.user):
-        return HttpResponseForbidden("Немає доступу до цього комплексу.")
+        return forbidden_response(request)
 
     building_form = None
     if request.method == 'POST' and request.POST.get('add_building'):
         if not user_can_manage_complex(request.user, complex_obj):
-            return HttpResponseForbidden("Доступ заборонено.")
+            return forbidden_response(request)
         building_form = BuildingForm(request.POST)
         if building_form.is_valid():
             b = building_form.save(commit=False)
@@ -148,7 +148,7 @@ def complex_edit(request, pk):
     complex_obj = get_object_or_404(ResidentialComplex, pk=pk)
 
     if not user_can_manage_complex(request.user, complex_obj):
-        return HttpResponseForbidden("Немає доступу до цього комплексу.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         form = ResidentialComplexForm(request.POST, instance=complex_obj)
@@ -171,7 +171,7 @@ def complex_edit(request, pk):
 def complex_delete(request, pk):
     complex_obj = get_object_or_404(ResidentialComplex, pk=pk)
     if not is_superadmin(request.user):
-        return HttpResponseForbidden("Доступ заборонено.")
+        return forbidden_response(request)
     if request.method == 'POST':
         complex_obj.delete()
         return redirect('complex_list')
@@ -183,7 +183,7 @@ def building_add(request, complex_pk):
     complex_obj = get_object_or_404(ResidentialComplex, pk=complex_pk)
 
     if not user_can_manage_complex(request.user, complex_obj):
-        return HttpResponseForbidden("Немає доступу.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         form = BuildingForm(request.POST)
@@ -206,7 +206,7 @@ def building_edit(request, pk):
     complex_obj = building.complex
 
     if not user_can_manage_complex(request.user, complex_obj):
-        return HttpResponseForbidden("Немає доступу.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         form = BuildingForm(request.POST, instance=building)
@@ -227,7 +227,7 @@ def building_delete(request, pk):
     complex_obj = building.complex
 
     if not user_can_manage_complex(request.user, complex_obj):
-        return HttpResponseForbidden("Немає доступу.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         building.delete()
@@ -247,7 +247,7 @@ def entrance_add(request, complex_pk, building_id):
     building = get_object_or_404(Building, pk=building_id, complex=complex_obj)
 
     if not user_can_manage_complex(request.user, complex_obj):
-        return HttpResponseForbidden("Немає доступу.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         form = EntranceForm(request.POST)
@@ -270,7 +270,7 @@ def entrance_edit(request, pk):
     complex_obj = entrance.building.complex
 
     if not user_can_manage_complex(request.user, complex_obj):
-        return HttpResponseForbidden("Немає доступу.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         form = EntranceForm(request.POST, instance=entrance)
@@ -291,7 +291,7 @@ def entrance_delete(request, pk):
     complex_obj = entrance.building.complex
 
     if not user_can_manage_complex(request.user, complex_obj):
-        return HttpResponseForbidden("Немає доступу.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         entrance.delete()
@@ -311,7 +311,7 @@ def entrance_add_apartment(request, complex_pk, entrance_id):
     entrance = get_object_or_404(Entrance, pk=entrance_id, building__complex=complex_obj)
 
     if not user_can_manage_complex(request.user, complex_obj):
-        return HttpResponseForbidden("Немає доступу.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         form = ApartmentForm(request.POST, complex_obj=complex_obj)
@@ -334,7 +334,7 @@ def apartment_edit(request, pk):
     complex_obj = apt.entrance.building.complex
 
     if not user_can_manage_complex(request.user, complex_obj):
-        return HttpResponseForbidden("Немає доступу.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         form = ApartmentForm(request.POST, instance=apt, complex_obj=complex_obj)
@@ -356,7 +356,7 @@ def apartment_delete(request, pk):
 
     # Видаляти квартири може супер-адмін або адміністратор цього ЖК
     if not user_can_manage_complex(request.user, complex_obj):
-        return HttpResponseForbidden("Немає доступу.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         apt.delete()
@@ -368,7 +368,7 @@ def apartment_delete(request, pk):
 
 def storage_list(request):
     if not _has_storage_access(request.user):
-        return HttpResponseForbidden("РќРµРґРѕСЃС‚Р°С‚РЅСЊРѕ РїСЂР°РІ РґРѕСЃС‚СѓРїСѓ.")
+        return forbidden_response(request)
 
 
     # --- всі ЖК (буде звужено для адміна ЖК) ---
@@ -381,7 +381,7 @@ def storage_list(request):
     if is_complex_admin(request.user):
         complex_obj = get_complex_for_admin(request.user)
         if not complex_obj:
-            return HttpResponseForbidden("Немає доступу.")
+            return forbidden_response(request)
         selected_complex_id = str(complex_obj.pk)
         complexes = complexes_qs.filter(pk=complex_obj.pk)
     else:
@@ -447,7 +447,7 @@ def storage_list(request):
     )
 def storage_edit(request, pk):
     if not _has_storage_access(request.user):
-        return HttpResponseForbidden("РќРµРґРѕСЃС‚Р°С‚РЅСЊРѕ РїСЂР°РІ РґРѕСЃС‚СѓРїСѓ.")
+        return forbidden_response(request)
 
     storage = get_object_or_404(
         StorageRoom.objects.select_related(
@@ -468,13 +468,13 @@ def storage_edit(request, pk):
     if is_complex_admin(request.user):
         complex_obj = get_complex_for_admin(request.user)
         if not complex_obj:
-            return HttpResponseForbidden("Немає доступу.")
+            return forbidden_response(request)
         # комірка має бути прив'язана до квартири в цьому ЖК
         if (
             not storage.apartment
             or storage.apartment.entrance.building.complex_id != complex_obj.pk
         ):
-            return HttpResponseForbidden("Немає доступу.")
+            return forbidden_response(request)
         selected_complex_id = str(complex_obj.pk)
         complexes = complexes_qs.filter(pk=complex_obj.pk)
         selected_complex = complex_obj
@@ -531,7 +531,7 @@ def storage_edit(request, pk):
 
 def storage_delete(request, pk):
     if not _has_storage_access(request.user):
-        return HttpResponseForbidden("РќРµРґРѕСЃС‚Р°С‚РЅСЊРѕ РїСЂР°РІ РґРѕСЃС‚СѓРїСѓ.")
+        return forbidden_response(request)
 
     storage = get_object_or_404(
         StorageRoom.objects.select_related(
@@ -551,7 +551,7 @@ def storage_delete(request, pk):
             or not storage.apartment
             or storage.apartment.entrance.building.complex_id != complex_obj.pk
         ):
-            return HttpResponseForbidden("Немає доступу.")
+            return forbidden_response(request)
 
     if request.method == 'POST':
         storage.delete()
@@ -582,10 +582,10 @@ def owner_edit(request, pk):
     else:
         complex_obj = get_complex_for_admin(request.user)
         if not complex_obj:
-            return HttpResponseForbidden("Немає доступу.")
+            return forbidden_response(request)
         form_kwargs['complex_obj'] = complex_obj
         if owner.complex_id != complex_obj.pk:
-            return HttpResponseForbidden("Немає доступу.")
+            return forbidden_response(request)
 
     if request.method == 'POST':
         form = OwnerForm(request.POST, instance=owner, **form_kwargs)
@@ -617,9 +617,9 @@ def owner_delete(request, pk):
     else:
         complex_obj = get_complex_for_admin(request.user)
         if not complex_obj:
-            return HttpResponseForbidden("Немає доступу.")
+            return forbidden_response(request)
         if owner.complex_id != complex_obj.pk:
-            return HttpResponseForbidden("Немає доступу.")
+            return forbidden_response(request)
 
     if request.method == 'POST':
         # Перед видаленням відв'язуємо квартири від власника,

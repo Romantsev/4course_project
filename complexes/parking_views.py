@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponseForbidden
+from residence_manager.responses import forbidden_response
 
 from .models import ParkingZone, ParkingSpot, Entrance, Owner, ResidentialComplex
 from .forms import ParkingZoneForm, ParkingSpotForm
@@ -67,7 +67,7 @@ def parking_list(request):
     elif is_complex_admin(request.user):
         complex_obj = get_complex_for_admin(request.user)
         if complex_obj is None:
-            return HttpResponseForbidden("Доступ заборонено.")
+            return forbidden_response(request)
 
         # фіксований ЖК для адміністратора
         selected_complex_id = str(complex_obj.pk)
@@ -115,7 +115,7 @@ def parking_list(request):
                 spot_form.save()
                 return redirect('parking_list')
     else:
-        return HttpResponseForbidden("Доступ заборонено.")
+        return forbidden_response(request)
 
     return render(request, 'complexes/parking_list.html', {
         'zones': zones,
@@ -142,9 +142,9 @@ def parking_zone_edit(request, pk):
             complex_obj is None
             or zone.entrance.building.complex_id != complex_obj.pk
         ):
-            return HttpResponseForbidden("Доступ заборонено.")
+            return forbidden_response(request)
     else:
-        return HttpResponseForbidden("Доступ заборонено.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         form = ParkingZoneForm(request.POST, instance=zone)
@@ -181,9 +181,9 @@ def parking_zone_delete(request, pk):
             complex_obj is None
             or zone.entrance.building.complex_id != complex_obj.pk
         ):
-            return HttpResponseForbidden("Доступ заборонено.")
+            return forbidden_response(request)
     else:
-        return HttpResponseForbidden("Доступ заборонено.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         zone.delete()
@@ -210,9 +210,9 @@ def parking_spot_edit(request, pk):
             complex_obj is None
             or spot.parking_zone.entrance.building.complex_id != complex_obj.pk
         ):
-            return HttpResponseForbidden("Доступ заборонено.")
+            return forbidden_response(request)
     else:
-        return HttpResponseForbidden("Доступ заборонено.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         form = ParkingSpotForm(request.POST, instance=spot, complex_obj=complex_obj)
@@ -253,9 +253,9 @@ def parking_spot_delete(request, pk):
             complex_obj is None
             or spot.parking_zone.entrance.building.complex_id != complex_obj.pk
         ):
-            return HttpResponseForbidden("Доступ заборонено.")
+            return forbidden_response(request)
     else:
-        return HttpResponseForbidden("Доступ заборонено.")
+        return forbidden_response(request)
 
     if request.method == 'POST':
         spot.delete()
