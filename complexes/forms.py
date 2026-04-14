@@ -5,6 +5,116 @@ from .models import (
 )
 from django.core.validators import RegexValidator, EmailValidator
 from django.core.exceptions import ValidationError
+from .owner_compat import owner_has_complex_column, owner_matches_complex, owners_for_complex
+
+
+def apartment_choice_label(apartment):
+    entrance = getattr(apartment, 'entrance', None)
+    building = getattr(entrance, 'building', None)
+    complex_obj = getattr(building, 'complex', None)
+
+    parts = [f"Кв. {apartment.number}"]
+    if complex_obj is not None:
+        parts.append(f"ЖК {complex_obj.name}")
+    if building is not None:
+        parts.append(f"буд. {building.number}")
+    if entrance is not None:
+        parts.append(f"під'їзд {entrance.number}")
+    return " | ".join(parts)
+
+
+def visitor_apartment_choice_label(apartment):
+    entrance = getattr(apartment, 'entrance', None)
+    building = getattr(entrance, 'building', None)
+    complex_obj = getattr(building, 'complex', None)
+
+    parts = []
+    if complex_obj is not None:
+        parts.append(f"ЖК {complex_obj.name}")
+    if building is not None:
+        parts.append(f"буд. {building.number}")
+    if entrance is not None:
+        parts.append(f"під'їзд {entrance.number}")
+    parts.append(f"кв. {apartment.number}")
+    return " | ".join(parts)
+
+
+def entrance_choice_label(entrance):
+    building = getattr(entrance, 'building', None)
+    complex_obj = getattr(building, 'complex', None)
+
+    parts = []
+    if complex_obj is not None:
+        parts.append(f"ЖК {complex_obj.name}")
+    if building is not None:
+        parts.append(f"буд. {building.number}")
+    parts.append(f"під'їзд {entrance.number}")
+    return " | ".join(parts)
+
+
+def parking_zone_choice_label(parking_zone):
+    entrance = getattr(parking_zone, 'entrance', None)
+    building = getattr(entrance, 'building', None)
+    complex_obj = getattr(building, 'complex', None)
+
+    parts = []
+    if complex_obj is not None:
+        parts.append(f"ЖК {complex_obj.name}")
+    if building is not None:
+        parts.append(f"буд. {building.number}")
+    if entrance is not None:
+        parts.append(f"під'їзд {entrance.number}")
+    parts.append(f"зона #{parking_zone.pk}")
+    if parking_zone.type:
+        parts.append(str(parking_zone.type))
+    return " | ".join(parts)
+
+
+def owner_choice_label(owner):
+    parts = [owner.name]
+    complex_name = None
+
+    if owner_has_complex_column():
+        complex_obj = getattr(owner, 'complex', None)
+        if complex_obj is not None:
+            complex_name = complex_obj.name
+    else:
+        apartment = (
+            owner.apartments.select_related('entrance__building__complex')
+            .order_by('apartment_id')
+            .first()
+        )
+        if apartment and apartment.entrance and apartment.entrance.building and apartment.entrance.building.complex:
+            complex_name = apartment.entrance.building.complex.name
+
+    if complex_name:
+        parts.append(f"ЖК {complex_name}")
+    return " | ".join(parts)
+
+
+def configure_apartment_field(field):
+    field.queryset = field.queryset.select_related('entrance__building__complex')
+    field.label_from_instance = apartment_choice_label
+    return field
+
+
+def configure_entrance_field(field):
+    field.queryset = field.queryset.select_related('building__complex')
+    field.label_from_instance = entrance_choice_label
+    return field
+
+
+def configure_parking_zone_field(field):
+    field.queryset = field.queryset.select_related('entrance__building__complex')
+    field.label_from_instance = parking_zone_choice_label
+    return field
+
+
+def configure_owner_field(field):
+    if owner_has_complex_column():
+        field.queryset = field.queryset.select_related('complex')
+    field.label_from_instance = owner_choice_label
+    return field
 
 letters_validator = RegexValidator(
     r'^[A-Za-zА-Яа-яІіЇїЄєҐґʼ’\s-]+$',
@@ -167,10 +277,13 @@ class ResidentForm(forms.ModelForm):
         self.fields['contact'].validators = [validate_phone_or_email]
         self.fields['role'].validators = [letters_validator]
         self.fields['apartment'].required = False
+        configure_apartment_field(self.fields['apartment'])
 
         if complex_obj is not None:
             self.fields['apartment'].queryset = Apartment.objects.filter(
                 entrance__building__complex=complex_obj
+            ).select_related(
+                'entrance__building__complex'
             ).order_by(
                 'entrance__building__number',
                 'entrance__number',
@@ -226,6 +339,10 @@ class ParkingZoneForm(forms.ModelForm):
             'entrance': "Під'їзд",
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        configure_entrance_field(self.fields['entrance'])
+
 
 class ParkingSpotForm(forms.ModelForm):
     class Meta:
@@ -248,13 +365,15 @@ class ParkingSpotForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         complex_obj = kwargs.pop('complex_obj', None)
         super().__init__(*args, **kwargs)
+        self.fields['owner'].queryset = owners_for_complex(
+            complex_obj.pk if complex_obj is not None else None
+        )
         if complex_obj is not None:
             self.fields['parking_zone'].queryset = ParkingZone.objects.filter(
                 entrance__building__complex=complex_obj
             ).order_by('parking_zone_id')
-            self.fields['owner'].queryset = Owner.objects.filter(
-                complex=complex_obj
-            ).order_by('name')
+        configure_parking_zone_field(self.fields['parking_zone'])
+        configure_owner_field(self.fields['owner'])
 
     def clean(self):
         cleaned = super().clean()
@@ -262,7 +381,7 @@ class ParkingSpotForm(forms.ModelForm):
         owner = cleaned.get('owner')
         if parking_zone and owner:
             zone_complex_id = parking_zone.entrance.building.complex_id
-            if owner.complex_id != zone_complex_id:
+            if not owner_matches_complex(owner, zone_complex_id):
                 self.add_error('owner', 'Власник має належати до того ж ЖК, що і паркомісце.')
         return cleaned
 
@@ -281,6 +400,7 @@ class StorageRoomForm(forms.ModelForm):
         self.fields['location'].label = 'Розташування'
         self.fields['status'].label = 'Статус'
         self.fields['apartment'].label = "Квартира (необов'язково)"
+        configure_apartment_field(self.fields['apartment'])
         labels = {
             'number': 'Номер',
             'location': 'Розташування',
@@ -310,9 +430,13 @@ class VisitorForm(forms.ModelForm):
         self.fields['fullname'].label = 'ПІБ відвідувача'
         self.fields['purpose'].label = 'Мета візиту'
         self.fields['apartment'].label = 'Квартира'
+        configure_apartment_field(self.fields['apartment'])
+        self.fields['apartment'].label_from_instance = visitor_apartment_choice_label
         if complex_obj is not None:
             self.fields['apartment'].queryset = Apartment.objects.filter(
                 entrance__building__complex=complex_obj
+            ).select_related(
+                'entrance__building__complex'
             ).order_by(
                 'entrance__building__number', 'entrance__number', 'number'
             )

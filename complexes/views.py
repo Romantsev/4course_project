@@ -443,6 +443,7 @@ def storage_list(request):
             'apartments': apartments,
             'complexes': complexes,
             'selected_complex_id': selected_complex_id,
+            'show_complex_column': is_superadmin(request.user) and not selected_complex_id,
         },
     )
 def storage_edit(request, pk):

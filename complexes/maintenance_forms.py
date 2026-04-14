@@ -1,5 +1,6 @@
 from django import forms
 from .models import MaintenanceRequest, Apartment
+from .forms import configure_apartment_field
 
 
 class MaintenanceRequestForm(forms.ModelForm):
@@ -17,5 +18,6 @@ class MaintenanceRequestForm(forms.ModelForm):
         if owner is not None:
             self.fields['apartment'].queryset = Apartment.objects.filter(owner=owner)
         self.fields['apartment'].label = 'Квартира'
+        configure_apartment_field(self.fields['apartment'])
         self.fields['description'].label = 'Опис проблеми'
 

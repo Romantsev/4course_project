@@ -116,6 +116,7 @@ def visitors_list(request):
             'complex': complex_obj,
             'complexes': complexes,
             'selected_complex': selected_complex_value,
+            'show_complex_column': is_superadmin(user) and not selected_complex_value,
         },
     )
 

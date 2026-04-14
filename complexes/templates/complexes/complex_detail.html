@@ -1,112 +1,150 @@
 {% extends "complexes/base.html" %}
 {% block title %}{{ complex.name }}{% endblock %}
 
-{% block content %}
+{% block extra_head %}
 <style>
   #complex-detail .card-body > h5.card-title { display: none; }
-  </style>
-<div id="complex-detail">
-<h3>{{ complex.name }}</h3>
-<p class="text-muted">{{ complex.address }}</p>
+  #complex-detail .apartment-list {
+    list-style: none;
+    padding-left: 0;
+    margin: .5rem 0 0;
+  }
+  #complex-detail .apartment-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .6rem .85rem;
+    margin-bottom: .55rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #f8fafc;
+  }
+  #complex-detail .apartment-info {
+    flex: 1 1 auto;
+    min-width: 0;
+    line-height: 1.35;
+  }
+  #complex-detail .apartment-actions {
+    display: inline-flex;
+    gap: .5rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  #complex-detail .apartment-actions .btn {
+    border-radius: 999px;
+    padding: .2rem .7rem;
+  }
+  @media (max-width: 767.98px) {
+    #complex-detail .apartment-item {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    #complex-detail .apartment-actions {
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}
 
-<div class="mb-2 d-flex gap-2">
+{% block content %}
+<div id="complex-detail">
+  <h3>{{ complex.name }}</h3>
+  <p class="text-muted">{{ complex.address }}</p>
+
+  <div class="mb-2 d-flex gap-2">
     <a href="{% url 'complex_edit' complex.pk %}" class="btn btn-sm btn-primary">Редагувати ЖК</a>
     <a href="{% url 'complex_delete' complex.pk %}" class="btn btn-sm btn-danger">Видалити ЖК</a>
     <a href="{% url 'complex_list' %}" class="btn btn-sm btn-outline-secondary">До списку</a>
-    </div>
+  </div>
 
-<hr>
+  <hr>
 
-<div class="row">
+  <div class="row">
     <div class="col-md-8">
-        <h4>Будинки</h4>
+      <h4>Будинки</h4>
 
-        {% for b in buildings %}
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="card-title mb-0">Будинок {{ b.number }} (поверхів: {{ b.floors }})</h5>
-                        {% if user.is_superuser %}
-                        <div class="btn-group btn-group-sm" role="group">
-                            <a href="{% url 'building_edit' b.pk %}" class="btn btn-outline-primary">Редагувати</a>
-                            <a href="{% url 'building_delete' b.pk %}" class="btn btn-outline-danger">Видалити</a>
-                        </div>
-                        {% endif %}
-                    </div>
-                    <h5 class="card-title">Будинок {{ b.number }} (поверхів: {{ b.floors }})</h5>
-
-                   <h6>Під'їзди:</h6>
-<ul>
-    {% for e in b.entrances.all %}
-        <li class="mb-1">
-            <div class="fw-semibold">Під'їзд {{ e.number }}</div>
-            <div class="d-flex gap-2 mt-1">
-                <a href="{% url 'entrance_edit' e.pk %}" class="btn btn-sm btn-primary">Редагувати</a>
-                <a href="{% url 'entrance_delete' e.pk %}" class="btn btn-sm btn-danger">Видалити</a>
+      {% for b in buildings %}
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="card-title mb-0">Будинок {{ b.number }} (поверхів: {{ b.floors }})</h5>
+              {% if user.is_superuser %}
+                <div class="btn-group btn-group-sm" role="group">
+                  <a href="{% url 'building_edit' b.pk %}" class="btn btn-outline-primary">Редагувати</a>
+                  <a href="{% url 'building_delete' b.pk %}" class="btn btn-outline-danger">Видалити</a>
+                </div>
+              {% endif %}
             </div>
-            {% if e.apartments.all %}
-                <ul class="small ms-3">
-                    {% for a in e.apartments.all %}
-                        <li>
+            <h5 class="card-title">Будинок {{ b.number }} (поверхів: {{ b.floors }})</h5>
+
+            <h6>Під'їзди:</h6>
+            <ul>
+              {% for e in b.entrances.all %}
+                <li class="mb-1">
+                  <div class="fw-semibold">Під'їзд {{ e.number }}</div>
+                  <div class="d-flex gap-2 mt-1">
+                    <a href="{% url 'entrance_edit' e.pk %}" class="btn btn-sm btn-primary">Редагувати</a>
+                    <a href="{% url 'entrance_delete' e.pk %}" class="btn btn-sm btn-danger">Видалити</a>
+                  </div>
+
+                  {% if e.apartments.all %}
+                    <ul class="small ms-3 apartment-list">
+                      {% for a in e.apartments.all %}
+                        <li class="apartment-item">
+                          <div class="apartment-info">
                             Кв. {{ a.number }},
                             поверх {{ a.floor }},
                             кімнат: {{ a.rooms }}
                             {% if a.owner %}
-                                — власник: {{ a.owner.name }}
+                              — власник: {{ a.owner.name }}
                             {% else %}
-                                — <span class="text-muted">власник не вказаний</span>
+                              — <span class="text-muted">власник не вказаний</span>
                             {% endif %}
-                            <a href="{% url 'apartment_edit' a.pk %}"
-                               class="ms-2 text-primary text-decoration-none">
-                                редагувати
-                            </a>
-                            |
-                            <a href="{% url 'apartment_delete' a.pk %}"
-                               class="ms-2 text-danger text-decoration-none">
-                                видалити
-                            </a>
+                          </div>
+                          <div class="apartment-actions">
+                            <a href="{% url 'apartment_edit' a.pk %}" class="btn btn-sm btn-outline-primary">Редагувати</a>
+                            <a href="{% url 'apartment_delete' a.pk %}" class="btn btn-sm btn-outline-danger">Видалити</a>
+                          </div>
                         </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <div class="text-muted small ms-1">Немає квартир.</div>
-            {% endif %}
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <div class="text-muted small ms-1">Немає квартир.</div>
+                  {% endif %}
 
-            <a href="{% url 'apartment_add' complex.pk e.pk %}"
-               class="btn btn-sm btn-outline-primary mt-1">
-                + Квартира
-            </a>
-        </li>
-    {% empty %}
-        <li>Немає під'їздів.</li>
-    {% endfor %}
-</ul>
+                  <a href="{% url 'apartment_add' complex.pk e.pk %}" class="btn btn-sm btn-outline-primary mt-1">
+                    + Квартира
+                  </a>
+                </li>
+              {% empty %}
+                <li>Немає під'їздів.</li>
+              {% endfor %}
+            </ul>
 
-                    <form method="post" action="{% url 'entrance_add' complex.pk b.pk %}">
-                        {% csrf_token %}
-                        <div class="input-group input-group-sm">
-                            <input type="number" name="number" class="form-control"
-                                   placeholder="№ нового під'їзду" required>
-                            <button class="btn btn-outline-success" type="submit">
-                                Додати під'їзд
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        {% empty %}
-            <p>Будинків ще немає.</p>
-        {% endfor %}
+            <form method="post" action="{% url 'entrance_add' complex.pk b.pk %}">
+              {% csrf_token %}
+              <div class="input-group input-group-sm">
+                <input type="number" name="number" class="form-control" placeholder="№ нового під'їзду" required>
+                <button class="btn btn-outline-success" type="submit">Додати під'їзд</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      {% empty %}
+        <p>Будинків ще немає.</p>
+      {% endfor %}
     </div>
 
     <div class="col-md-4">
-        <h4>Додати будинок</h4>
-        <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="add_building" value="1">
-            {{ building_form.as_p }}
-            <button class="btn btn-success" type="submit">Додати будинок</button>
-        </form>
+      <h4>Додати будинок</h4>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="add_building" value="1">
+        {{ building_form.as_p }}
+        <button class="btn btn-success" type="submit">Додати будинок</button>
+      </form>
     </div>
+  </div>
 </div>
 {% endblock %}

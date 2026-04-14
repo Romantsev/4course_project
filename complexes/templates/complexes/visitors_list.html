@@ -105,6 +105,7 @@
             <th>Час</th>
             <th>ПІБ</th>
             <th>Мета</th>
+            {% if show_complex_column %}<th>ЖК</th>{% endif %}
             <th>Квартира</th>
             <th>Додав</th>
             <th>QR</th>
@@ -117,15 +118,21 @@
             <td>{{ v.created_at|date:"Y-m-d H:i" }}</td>
             <td>{{ v.fullname }}</td>
             <td>{{ v.purpose|default:"-" }}</td>
+            {% if show_complex_column %}
+            <td>
+              {% if v.apartment and v.apartment.entrance and v.apartment.entrance.building and v.apartment.entrance.building.complex %}
+                {{ v.apartment.entrance.building.complex.name }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            {% endif %}
             <td>
               {% if v.apartment %}
                 {% if v.apartment.entrance and v.apartment.entrance.building %}
-                  Під'їзд {{ v.apartment.entrance.number }}, Буд. {{ v.apartment.entrance.building.number }},
+                  Буд. {{ v.apartment.entrance.building.number }}, Під'їзд {{ v.apartment.entrance.number }},
                 {% endif %}
                 Кв. {{ v.apartment.number }}
-                {% if v.apartment.entrance and v.apartment.entrance.building and v.apartment.entrance.building.complex %}
-                  — {{ v.apartment.entrance.building.complex.name }}
-                {% endif %}
               {% else %}
                 -
               {% endif %}
@@ -139,7 +146,7 @@
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="7">Ще не зафіксовано відвідувачів.</td></tr>
+          <tr><td colspan="{% if show_complex_column %}8{% else %}7{% endif %}">Ще не зафіксовано відвідувачів.</td></tr>
           {% endfor %}
         </tbody>
       </table>

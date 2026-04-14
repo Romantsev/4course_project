@@ -1,14 +1,16 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from residence_manager.responses import forbidden_response
 
-from .models import ParkingZone, ParkingSpot, Entrance, Owner, ResidentialComplex
+from .models import ParkingZone, ParkingSpot, Entrance, ResidentialComplex
 from .forms import ParkingZoneForm, ParkingSpotForm
+from .owner_compat import owner_has_complex_column, owner_matches_complex, owner_queryset, owners_for_complex
 from accounts.utils import is_superadmin, is_complex_admin, get_complex_for_admin
 
 
 def parking_list(request):
     complexes = ResidentialComplex.objects.order_by('name')
     selected_complex_id = (request.GET.get('complex') or '').strip()
+    owner_complex_supported = owner_has_complex_column()
 
     if is_superadmin(request.user):
         if request.method == 'POST':
@@ -42,6 +44,8 @@ def parking_list(request):
             'parking_zone__entrance__building__complex',
             'owner',
         ).all()
+        if not owner_complex_supported:
+            spots = spots.defer('owner__complex')
 
         if selected_complex_id:
             try:
@@ -55,14 +59,16 @@ def parking_list(request):
                 if zone_form is not None:
                     zone_form.fields['entrance'].queryset = Entrance.objects.filter(
                         building__complex_id=cid
+                    ).select_related(
+                        'building__complex'
                     ).order_by('building__number', 'number')
                 if spot_form is not None:
                     spot_form.fields['parking_zone'].queryset = ParkingZone.objects.filter(
                         entrance__building__complex_id=cid
+                    ).select_related(
+                        'entrance__building__complex'
                     ).order_by('parking_zone_id')
-                    spot_form.fields['owner'].queryset = Owner.objects.filter(
-                        complex_id=cid
-                    ).order_by('name')
+                    spot_form.fields['owner'].queryset = owners_for_complex(cid)
 
     elif is_complex_admin(request.user):
         complex_obj = get_complex_for_admin(request.user)
@@ -84,6 +90,8 @@ def parking_list(request):
         ).filter(
             parking_zone__entrance__building__complex=complex_obj
         )
+        if not owner_complex_supported:
+            spots = spots.defer('owner__complex')
 
         # форми додавання зон/місць
         if request.method == 'POST':
@@ -103,6 +111,8 @@ def parking_list(request):
         # обмежуємо вибір лише об'єктами поточного ЖК
         entrances_qs = Entrance.objects.filter(
             building__complex=complex_obj
+        ).select_related(
+            'building__complex'
         ).order_by('building__number', 'number')
         if zone_form is not None:
             zone_form.fields['entrance'].queryset = entrances_qs
@@ -124,6 +134,7 @@ def parking_list(request):
         'spot_form': spot_form,
         'complexes': complexes,
         'selected_complex_id': selected_complex_id,
+        'show_complex_column': is_superadmin(request.user) and not selected_complex_id,
     })
 
 
@@ -217,9 +228,9 @@ def parking_spot_edit(request, pk):
     if request.method == 'POST':
         form = ParkingSpotForm(request.POST, instance=spot, complex_obj=complex_obj)
         if complex_obj is not None:
-            if spot.owner_id and spot.owner.complex_id != complex_obj.pk:
+            if spot.owner_id and not owner_matches_complex(spot.owner, complex_obj.pk):
                 form.fields['owner'].queryset = (
-                    form.fields['owner'].queryset | Owner.objects.filter(pk=spot.owner_id)
+                    form.fields['owner'].queryset | owner_queryset().filter(pk=spot.owner_id)
                 ).distinct()
         if form.is_valid():
             form.save()
@@ -227,9 +238,9 @@ def parking_spot_edit(request, pk):
     else:
         form = ParkingSpotForm(instance=spot, complex_obj=complex_obj)
         if complex_obj is not None:
-            if spot.owner_id and spot.owner.complex_id != complex_obj.pk:
+            if spot.owner_id and not owner_matches_complex(spot.owner, complex_obj.pk):
                 form.fields['owner'].queryset = (
-                    form.fields['owner'].queryset | Owner.objects.filter(pk=spot.owner_id)
+                    form.fields['owner'].queryset | owner_queryset().filter(pk=spot.owner_id)
                 ).distinct()
     return render(request, 'complexes/simple_form.html', {
         'title': f"Редагувати паркомісце №{spot.number}",

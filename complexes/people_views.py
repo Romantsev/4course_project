@@ -63,6 +63,7 @@ def owners_list(request):
             "form": form,
             "complexes": complexes,
             "selected_complex": int(selected_complex) if selected_complex else None,
+            "show_complex_column": is_superadmin(request.user) and not selected_complex,
         },
     )
 
@@ -155,6 +156,7 @@ def residents_list(request):
             "form": form,
             "complexes": complexes,
             "selected_complex": int(selected_complex) if selected_complex else None,
+            "show_complex_column": is_superadmin(request.user) and not selected_complex,
         },
     )
 

@@ -25,6 +25,7 @@
             <th>№</th>
             <th>Статус</th>
             <th>Розташування</th>
+            {% if show_complex_column %}<th>ЖК</th>{% endif %}
             <th>Квартира</th>
             <th></th>
         </tr>
@@ -35,6 +36,15 @@
             <td>{{ s.number }}</td>
             <td>{{ s.get_status_display }}</td>
             <td>{{ s.location }}</td>
+            {% if show_complex_column %}
+            <td>
+                {% if s.apartment and s.apartment.entrance and s.apartment.entrance.building and s.apartment.entrance.building.complex %}
+                    {{ s.apartment.entrance.building.complex.name }}
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+            {% endif %}
             <td>
                 {% if s.apartment %}
                     Кв-{{ s.apartment.number }}
@@ -45,12 +55,12 @@
                 {% endif %}
             </td>
             <td>
-                <a href="{% url 'storage_edit' s.pk %}" class="btn btn-sm btn-primary">Ред.</a>
+                <a href="{% url 'storage_edit' s.pk %}" class="btn btn-sm btn-primary">Редагувати</a>
                 <a href="{% url 'storage_delete' s.pk %}" class="btn btn-sm btn-danger">Видалити</a>
             </td>
         </tr>
         {% empty %}
-        <tr><td colspan="5">Комірок поки немає.</td></tr>
+        <tr><td colspan="{% if show_complex_column %}6{% else %}5{% endif %}">Комірок поки немає.</td></tr>
         {% endfor %}
     </tbody>
 </table>
@@ -84,7 +94,7 @@
                 <option value="">---------</option>
                 {% for a in apartments %}
                     <option value="{{ a.pk }}">
-                        Кв-{{ a.number }} (Буд. {{ a.entrance.building.number }}, Під'їзд {{ a.entrance.number }})
+                        ЖК {{ a.entrance.building.complex.name }} | Кв-{{ a.number }} (Буд. {{ a.entrance.building.number }}, Під'їзд {{ a.entrance.number }})
                     </option>
                 {% endfor %}
             </select>

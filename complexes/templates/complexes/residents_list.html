@@ -34,6 +34,7 @@ document.getElementById('id_complex_filter').addEventListener('change', function
         <tr>
             <th>ПІБ</th>
             <th>Роль</th>
+            {% if show_complex_column %}<th>ЖК</th>{% endif %}
             <th>Квартира</th>
             <th>Контакт</th>
             <th></th>
@@ -44,12 +45,21 @@ document.getElementById('id_complex_filter').addEventListener('change', function
         <tr>
             <td>{{ r.fullname }}</td>
             <td>{{ r.role }}</td>
+            {% if show_complex_column %}
+            <td>
+                {% if r.apartment and r.apartment.entrance and r.apartment.entrance.building and r.apartment.entrance.building.complex %}
+                    {{ r.apartment.entrance.building.complex.name }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            {% endif %}
             <td>
                 {% if r.apartment %}
-                    кв. {{ r.apartment.number }}
-                    {% if r.apartment.entrance and r.apartment.entrance.building and r.apartment.entrance.building.complex %}
-                        у {{ r.apartment.entrance.building.complex.name }}
+                    {% if r.apartment.entrance and r.apartment.entrance.building %}
+                        Буд. {{ r.apartment.entrance.building.number }}, Під'їзд {{ r.apartment.entrance.number }},
                     {% endif %}
+                    Кв. {{ r.apartment.number }}
                 {% else %}
                     -
                 {% endif %}
@@ -63,7 +73,7 @@ document.getElementById('id_complex_filter').addEventListener('change', function
             </td>
         </tr>
         {% empty %}
-        <tr><td colspan="5">Мешканців не знайдено.</td></tr>
+        <tr><td colspan="{% if show_complex_column %}6{% else %}5{% endif %}">Мешканців не знайдено.</td></tr>
         {% endfor %}
     </tbody>
 </table>

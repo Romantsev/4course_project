@@ -50,7 +50,7 @@
                         {% if storage.apartment and storage.apartment.pk == a.pk %}
                             selected
                         {% endif %}>
-                        Кв-{{ a.number }} (Буд. {{ a.entrance.building.number }}, Під'їзд {{ a.entrance.number }})
+                        ЖК {{ a.entrance.building.complex.name }} | Кв-{{ a.number }} (Буд. {{ a.entrance.building.number }}, Під'їзд {{ a.entrance.number }})
                     </option>
                 {% endfor %}
             </select>
