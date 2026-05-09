@@ -5,6 +5,7 @@
 <h3>Мешканці</h3>
 
 {# Фільтр за ЖК (для супер-адміна) #}
+{% if user.is_superuser %}
 <form method="get" id="filter-form" class="mb-3">
     <div class="row g-2 align-items-center">
         <div class="col-auto">
@@ -28,6 +29,7 @@ document.getElementById('id_complex_filter').addEventListener('change', function
     document.getElementById('filter-form').submit();
 });
 </script>
+{% endif %}
 
 <table class="table table-striped">
     <thead>

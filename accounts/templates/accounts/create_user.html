@@ -3,58 +3,81 @@
 <h3 class="mb-3">{{ title }}</h3>
 <form method="post" class="card p-3">
   {% csrf_token %}
-  {{ form.non_field_errors }}
 
   <div class="row g-2">
     <div class="col-md-4">
-      <label class="form-label">Логін</label>
+      <label class="form-label">{{ form.username.label }}</label>
       {{ form.username }}
+      {% if form.username.errors %}
+      <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+      {% endif %}
     </div>
     <div class="col-md-4">
-      <label class="form-label">Email</label>
+      <label class="form-label">{{ form.email.label }}</label>
       {{ form.email }}
+      {% if form.email.errors %}
+      <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+      {% endif %}
     </div>
   </div>
 
   {% if form.complex %}
   <div class="mt-2">
-    <label class="form-label">Житловий комплекс</label>
+    <label class="form-label">{{ form.complex.label }}</label>
     {{ form.complex }}
+    {% if form.complex.errors %}
+    <div class="text-danger small mt-1">{{ form.complex.errors.0 }}</div>
+    {% endif %}
   </div>
   {% endif %}
 
   {% if form.owner %}
   <div class="mt-2">
-    <label class="form-label">Власник</label>
+    <label class="form-label">{{ form.owner.label }}</label>
     {{ form.owner }}
+    {% if form.owner.errors %}
+    <div class="text-danger small mt-1">{{ form.owner.errors.0 }}</div>
+    {% endif %}
   </div>
   {% endif %}
 
   {% if form.staff %}
   <div class="mt-2">
-    <label class="form-label">Співробітник</label>
+    <label class="form-label">{{ form.staff.label }}</label>
     {{ form.staff }}
+    {% if form.staff.errors %}
+    <div class="text-danger small mt-1">{{ form.staff.errors.0 }}</div>
+    {% endif %}
   </div>
   {% endif %}
 
   {% if form.access_type %}
   <div class="mt-2">
-    <label class="form-label">Права доступу</label>
+    <label class="form-label">{{ form.access_type.label }}</label>
     {{ form.access_type }}
+    {% if form.access_type.errors %}
+    <div class="text-danger small mt-1">{{ form.access_type.errors.0 }}</div>
+    {% endif %}
   </div>
   {% endif %}
 
   <div class="row g-2 mt-2">
     <div class="col-md-6">
-      <label class="form-label">Пароль</label>
+      <label class="form-label">{{ form.password1.label }}</label>
       {{ form.password1 }}
+      {% if form.password1.errors %}
+      <div class="text-danger small mt-1">{{ form.password1.errors.0 }}</div>
+      {% endif %}
     </div>
     <div class="col-md-6">
-      <label class="form-label">Підтвердження пароля</label>
+      <label class="form-label">{{ form.password2.label }}</label>
       {{ form.password2 }}
+      {% if form.password2.errors %}
+      <div class="text-danger small mt-1">{{ form.password2.errors.0 }}</div>
+      {% endif %}
     </div>
   </div>
 
-  <button type="submit" class="btn btn-primary mt-3">Створити</button>
+  <button type="submit" class="btn btn-primary mt-3">&#1057;&#1090;&#1074;&#1086;&#1088;&#1080;&#1090;&#1080;</button>
 </form>
 {% endblock %}

@@ -1,6 +1,7 @@
 # complexes/views.py
 
 from django.contrib import messages
+from django.forms import HiddenInput
 from django.db.models import Prefetch, Q
 from residence_manager.responses import forbidden_response
 from django.shortcuts import get_object_or_404, redirect, render
@@ -107,7 +108,7 @@ def complex_detail(request, pk):
     if request.method == 'POST' and request.POST.get('add_building'):
         if not user_can_manage_complex(request.user, complex_obj):
             return forbidden_response(request)
-        building_form = BuildingForm(request.POST)
+        building_form = BuildingForm(request.POST, complex_obj=complex_obj)
         if building_form.is_valid():
             b = building_form.save(commit=False)
             b.complex = complex_obj
@@ -136,7 +137,7 @@ def complex_detail(request, pk):
         'complex': complex_obj,
         'buildings': buildings,
         'staff': staff,
-        'building_form': building_form or BuildingForm(),
+        'building_form': building_form or BuildingForm(complex_obj=complex_obj),
     })
 
 
@@ -186,14 +187,14 @@ def building_add(request, complex_pk):
         return forbidden_response(request)
 
     if request.method == 'POST':
-        form = BuildingForm(request.POST)
+        form = BuildingForm(request.POST, complex_obj=complex_obj)
         if form.is_valid():
             b = form.save(commit=False)
             b.complex = complex_obj
             b.save()
             return redirect('complex_detail', pk=complex_pk)
     else:
-        form = BuildingForm()
+        form = BuildingForm(complex_obj=complex_obj)
 
     return render(request, 'complexes/simple_form.html', {
         'title': f"Додати будинок у {complex_obj.name}",
@@ -209,12 +210,12 @@ def building_edit(request, pk):
         return forbidden_response(request)
 
     if request.method == 'POST':
-        form = BuildingForm(request.POST, instance=building)
+        form = BuildingForm(request.POST, instance=building, complex_obj=complex_obj)
         if form.is_valid():
             form.save()
             return redirect('complex_detail', pk=complex_obj.pk)
     else:
-        form = BuildingForm(instance=building)
+        form = BuildingForm(instance=building, complex_obj=complex_obj)
 
     return render(request, 'complexes/simple_form.html', {
         'title': f"Редагувати будинок {building.number}",
@@ -250,14 +251,14 @@ def entrance_add(request, complex_pk, building_id):
         return forbidden_response(request)
 
     if request.method == 'POST':
-        form = EntranceForm(request.POST)
+        form = EntranceForm(request.POST, building_obj=building)
         if form.is_valid():
             e = form.save(commit=False)
             e.building = building
             e.save()
             return redirect('complex_detail', pk=complex_pk)
     else:
-        form = EntranceForm()
+        form = EntranceForm(building_obj=building)
 
     return render(request, 'complexes/simple_form.html', {
         'title': f"Додати під'їзд до будинку {building.number}",
@@ -273,12 +274,12 @@ def entrance_edit(request, pk):
         return forbidden_response(request)
 
     if request.method == 'POST':
-        form = EntranceForm(request.POST, instance=entrance)
+        form = EntranceForm(request.POST, instance=entrance, building_obj=entrance.building)
         if form.is_valid():
             form.save()
             return redirect('complex_detail', pk=complex_obj.pk)
     else:
-        form = EntranceForm(instance=entrance)
+        form = EntranceForm(instance=entrance, building_obj=entrance.building)
 
     return render(request, 'complexes/simple_form.html', {
         'title': f"Редагувати під'їзд {entrance.number}",
@@ -314,14 +315,14 @@ def entrance_add_apartment(request, complex_pk, entrance_id):
         return forbidden_response(request)
 
     if request.method == 'POST':
-        form = ApartmentForm(request.POST, complex_obj=complex_obj)
+        form = ApartmentForm(request.POST, complex_obj=complex_obj, entrance_obj=entrance)
         if form.is_valid():
             apt = form.save(commit=False)
             apt.entrance = entrance
             apt.save()
             return redirect('complex_detail', pk=complex_pk)
     else:
-        form = ApartmentForm(complex_obj=complex_obj)
+        form = ApartmentForm(complex_obj=complex_obj, entrance_obj=entrance)
 
     return render(request, 'complexes/simple_form.html', {
         'title': f"Додати квартиру у під'їзд {entrance.number}",
@@ -337,12 +338,12 @@ def apartment_edit(request, pk):
         return forbidden_response(request)
 
     if request.method == 'POST':
-        form = ApartmentForm(request.POST, instance=apt, complex_obj=complex_obj)
+        form = ApartmentForm(request.POST, instance=apt, complex_obj=complex_obj, entrance_obj=apt.entrance)
         if form.is_valid():
             form.save()
             return redirect('complex_detail', pk=complex_obj.pk)
     else:
-        form = ApartmentForm(instance=apt, complex_obj=complex_obj)
+        form = ApartmentForm(instance=apt, complex_obj=complex_obj, entrance_obj=apt.entrance)
 
     return render(request, 'complexes/simple_form.html', {
         'title': f"Редагувати кв. {apt.number}",
@@ -415,6 +416,8 @@ def storage_list(request):
         error_message = None
         if not number:
             error_message = "Номер комірки є обов'язковим."
+        elif StorageRoom.objects.filter(number=number).exists():
+            error_message = "Комірка з таким номером вже існує."
         elif apartment_id:
             apartment = apartments.filter(pk=apartment_id).first()
             if apartment is None:
@@ -504,6 +507,8 @@ def storage_edit(request, pk):
         error_message = None
         if not storage.number:
             error_message = "Номер комірки є обов'язковим."
+        elif StorageRoom.objects.filter(number=storage.number).exclude(pk=storage.pk).exists():
+            error_message = "Комірка з таким номером вже існує."
         elif apartment_id:
             apartment = apartments.filter(pk=apartment_id).first()
             if apartment is None:
@@ -590,11 +595,15 @@ def owner_edit(request, pk):
 
     if request.method == 'POST':
         form = OwnerForm(request.POST, instance=owner, **form_kwargs)
+        if 'complex_obj' in form_kwargs:
+            form.fields['complex'].widget = HiddenInput()
         if form.is_valid():
             form.save()
             return redirect('owners_list')
     else:
         form = OwnerForm(instance=owner, **form_kwargs)
+        if 'complex_obj' in form_kwargs:
+            form.fields['complex'].widget = HiddenInput()
 
     return render(request, 'complexes/simple_form.html', {
         'title': f"Редагувати власника: {owner.name}",

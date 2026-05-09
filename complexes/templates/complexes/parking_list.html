@@ -33,6 +33,11 @@
     .parking-table .actions-cell {
         white-space: nowrap;
     }
+    @media (min-width: 768px) {
+        .parking-submit-col {
+            padding-top: 2rem;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -40,6 +45,7 @@
 <h3>Управління паркінгом</h3>
 
 <!-- Фільтр по ЖК -->
+{% if user.is_superuser %}
 <form method="get" class="row mb-3">
     <div class="col-md-4">
         <label class="form-label">ЖК:</label>
@@ -53,6 +59,7 @@
         </select>
     </div>
 </form>
+{% endif %}
 
 <h4>Паркінг-зони</h4>
 <table class="table table-striped parking-table parking-zones-table{% if show_complex_column %} with-complex{% endif %}">
@@ -110,7 +117,7 @@
         {% endfor %}
     </div>
     {% endif %}
-    <div class="row g-2 align-items-end">
+    <div class="row g-2 align-items-start">
         <div class="col-md-3">
             <label class="form-label" for="id_zone_type">Тип</label>
             {{ zone_form.type }}
@@ -132,7 +139,7 @@
             <div class="text-danger small mt-1">{{ zone_form.entrance.errors.0 }}</div>
             {% endif %}
         </div>
-        <div class="col-md-2">
+        <div class="col-md-2 parking-submit-col">
             <button type="submit" class="btn btn-success w-100">Додати</button>
         </div>
     </div>
@@ -167,7 +174,11 @@
             {% if show_complex_column %}<td>{{ s.parking_zone.entrance.building.complex.name }}</td>{% endif %}
             <td>{{ s.number }}</td>
             <td>{{ s.status }}</td>
-            <td>{{ s.parking_zone_id }}</td>
+            <td>
+                буд. {{ s.parking_zone.entrance.building.number }}, під'їзд {{ s.parking_zone.entrance.number }}
+                {% if s.parking_zone.type %} | {{ s.parking_zone.type }}{% endif %}
+                {% if s.parking_zone.location %} | {{ s.parking_zone.location }}{% endif %}
+            </td>
             <td>{{ s.owner.name }}</td>
             <td class="actions-cell">
                 {% if spot_form %}
@@ -200,7 +211,7 @@
         {% endfor %}
     </div>
     {% endif %}
-    <div class="row g-2 align-items-end">
+    <div class="row g-2 align-items-start">
         <div class="col-md-2">
             <label class="form-label" for="id_spot_number">Номер</label>
             {{ spot_form.number }}
@@ -229,7 +240,7 @@
             <div class="text-danger small mt-1">{{ spot_form.owner.errors.0 }}</div>
             {% endif %}
         </div>
-        <div class="col-md-2">
+        <div class="col-md-2 parking-submit-col">
             <button type="submit" class="btn btn-success w-100">Додати</button>
         </div>
     </div>

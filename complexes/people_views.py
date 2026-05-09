@@ -1,5 +1,6 @@
 from residence_manager.responses import forbidden_response
 from django.shortcuts import get_object_or_404, redirect, render
+from django.forms import HiddenInput
 
 from accounts.utils import get_complex_for_admin, is_complex_admin, is_superadmin
 from .access_views import _has_guard_access
@@ -40,11 +41,13 @@ def owners_list(request):
 
         if request.method == "POST":
             form = OwnerForm(request.POST, complex_obj=complex_obj)
+            form.fields["complex"].widget = HiddenInput()
             if form.is_valid():
                 form.save()
                 return redirect("owners_list")
         else:
             form = OwnerForm(complex_obj=complex_obj)
+            form.fields["complex"].widget = HiddenInput()
 
         owners = (
             Owner.objects.select_related("complex")
@@ -176,6 +179,7 @@ def staff_list(request):
         complex_obj = get_complex_for_admin(request.user)
         if request.method == "POST":
             form = StaffForm(request.POST, complex_obj=complex_obj)
+            form.fields["complex"].widget = HiddenInput()
             if form.is_valid():
                 staff_obj = form.save(commit=False)
                 staff_obj.complex = complex_obj
@@ -183,6 +187,7 @@ def staff_list(request):
                 return redirect("staff_list")
         else:
             form = StaffForm(complex_obj=complex_obj)
+            form.fields["complex"].widget = HiddenInput()
         staff = Staff.objects.filter(complex=complex_obj).order_by("fullname")
 
     else:
@@ -301,6 +306,8 @@ def staff_edit(request, pk):
         if is_complex_admin(request.user):
             kwargs["complex_obj"] = get_complex_for_admin(request.user)
         form = StaffForm(request.POST, instance=staff, **kwargs)
+        if is_complex_admin(request.user):
+            form.fields["complex"].widget = HiddenInput()
         if form.is_valid():
             staff_obj = form.save(commit=False)
             if is_complex_admin(request.user):
@@ -312,6 +319,8 @@ def staff_edit(request, pk):
         if is_complex_admin(request.user):
             kwargs["complex_obj"] = get_complex_for_admin(request.user)
         form = StaffForm(instance=staff, **kwargs)
+        if is_complex_admin(request.user):
+            form.fields["complex"].widget = HiddenInput()
 
     return render(
         request,

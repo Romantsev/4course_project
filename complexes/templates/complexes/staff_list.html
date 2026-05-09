@@ -37,6 +37,9 @@
 <h4>Додати співробітника</h4>
 <form method="post" class="card p-3">
     {% csrf_token %}
+    {% for hidden_field in form.hidden_fields %}
+        {{ hidden_field }}
+    {% endfor %}
 
     <div class="row g-2">
 
@@ -77,6 +80,7 @@
         </div>
 
         <!-- ЖК -->
+        {% if form.complex.field.widget.input_type != 'hidden' %}
         <div class="col-md-2">
             <label class="form-label">ЖК</label>
             {{ form.complex }}
@@ -84,6 +88,7 @@
                 <div class="text-danger small">{{ form.complex.errors.0 }}</div>
             {% endif %}
         </div>
+        {% endif %}
 
         <!-- Кнопка -->
         <div class="col-md-1 pt-4">

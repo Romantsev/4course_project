@@ -64,9 +64,10 @@ def parking_zone_choice_label(parking_zone):
         parts.append(f"буд. {building.number}")
     if entrance is not None:
         parts.append(f"під'їзд {entrance.number}")
-    parts.append(f"зона #{parking_zone.pk}")
     if parking_zone.type:
         parts.append(str(parking_zone.type))
+    if getattr(parking_zone, 'location', None):
+        parts.append(str(parking_zone.location))
     return " | ".join(parts)
 
 
@@ -139,6 +140,13 @@ def validate_phone_or_email(value):
             )
 
 
+def duplicate_exists(model, filters, instance=None):
+    queryset = model.objects.filter(**filters)
+    if instance is not None and instance.pk:
+        queryset = queryset.exclude(pk=instance.pk)
+    return queryset.exists()
+
+
 class ResidentialComplexForm(forms.ModelForm):
     class Meta:
         model = ResidentialComplex
@@ -166,6 +174,18 @@ class ResidentialComplexForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['contact'].validators = [validate_phone_or_email]
 
+    def clean(self):
+        cleaned = super().clean()
+        name = cleaned.get('name')
+        address = cleaned.get('address')
+        if name and address and duplicate_exists(
+            ResidentialComplex,
+            {'name': name, 'address': address},
+            self.instance,
+        ):
+            self.add_error('name', 'ЖК з такою назвою та адресою вже існує.')
+        return cleaned
+
 
 
 
@@ -182,6 +202,22 @@ class BuildingForm(forms.ModelForm):
             'floors': 'Поверхів',
         }
 
+    def __init__(self, *args, **kwargs):
+        self.complex_obj = kwargs.pop('complex_obj', None)
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned = super().clean()
+        number = cleaned.get('number')
+        complex_obj = self.complex_obj or getattr(self.instance, 'complex', None)
+        if number is not None and complex_obj is not None and duplicate_exists(
+            Building,
+            {'complex': complex_obj, 'number': number},
+            self.instance,
+        ):
+            self.add_error('number', 'Будинок з таким номером вже існує в цьому ЖК.')
+        return cleaned
+
 
 class EntranceForm(forms.ModelForm):
     class Meta:
@@ -193,6 +229,22 @@ class EntranceForm(forms.ModelForm):
         labels = {
             'number': 'Номер',
         }
+
+    def __init__(self, *args, **kwargs):
+        self.building_obj = kwargs.pop('building_obj', None)
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned = super().clean()
+        number = cleaned.get('number')
+        building_obj = self.building_obj or getattr(self.instance, 'building', None)
+        if number is not None and building_obj is not None and duplicate_exists(
+            Entrance,
+            {'building': building_obj, 'number': number},
+            self.instance,
+        ):
+            self.add_error('number', 'Підʼїзд з таким номером вже існує в цьому будинку.')
+        return cleaned
 
 
 class ApartmentForm(forms.ModelForm):
@@ -216,12 +268,25 @@ class ApartmentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         complex_obj = kwargs.pop('complex_obj', None)
+        self.entrance_obj = kwargs.pop('entrance_obj', None)
         super().__init__(*args, **kwargs)
         self.fields['owner'].required = False
         if complex_obj is not None:
             self.fields['owner'].queryset = Owner.objects.filter(
                 complex=complex_obj
             ).order_by('name')
+
+    def clean(self):
+        cleaned = super().clean()
+        number = cleaned.get('number')
+        entrance_obj = self.entrance_obj or getattr(self.instance, 'entrance', None)
+        if number is not None and entrance_obj is not None and duplicate_exists(
+            Apartment,
+            {'entrance': entrance_obj, 'number': number},
+            self.instance,
+        ):
+            self.add_error('number', 'Квартира з таким номером вже існує в цьому підʼїзді.')
+        return cleaned
 
 
 
@@ -251,6 +316,19 @@ class OwnerForm(forms.ModelForm):
                 pk=complex_obj.pk
             )
             self.fields['complex'].initial = complex_obj
+
+    def clean(self):
+        cleaned = super().clean()
+        name = cleaned.get('name')
+        phone = cleaned.get('phone')
+        complex_obj = cleaned.get('complex')
+        if name and complex_obj and duplicate_exists(
+            Owner,
+            {'complex': complex_obj, 'name': name, 'phone': phone},
+            self.instance,
+        ):
+            self.add_error('name', 'Власник з таким ПІБ і контактом вже існує в цьому ЖК.')
+        return cleaned
 
 
 class ResidentForm(forms.ModelForm):
@@ -290,6 +368,19 @@ class ResidentForm(forms.ModelForm):
                 'number'
             )
 
+    def clean(self):
+        cleaned = super().clean()
+        fullname = cleaned.get('fullname')
+        contact = cleaned.get('contact')
+        apartment = cleaned.get('apartment')
+        if fullname and duplicate_exists(
+            Resident,
+            {'apartment': apartment, 'fullname': fullname, 'contact': contact},
+            self.instance,
+        ):
+            self.add_error('fullname', 'Такий мешканець вже існує для цієї квартири.')
+        return cleaned
+
 
 
 class StaffForm(forms.ModelForm):
@@ -322,6 +413,19 @@ class StaffForm(forms.ModelForm):
             self.fields['complex'].queryset = RC.objects.filter(pk=complex_obj.pk)
             self.fields['complex'].initial = complex_obj
 
+    def clean(self):
+        cleaned = super().clean()
+        fullname = cleaned.get('fullname')
+        contact = cleaned.get('contact')
+        complex_obj = cleaned.get('complex')
+        if fullname and complex_obj and duplicate_exists(
+            Staff,
+            {'complex': complex_obj, 'fullname': fullname, 'contact': contact},
+            self.instance,
+        ):
+            self.add_error('fullname', 'Працівник з таким ПІБ і контактом вже існує в цьому ЖК.')
+        return cleaned
+
 
 
 class ParkingZoneForm(forms.ModelForm):
@@ -342,6 +446,17 @@ class ParkingZoneForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         configure_entrance_field(self.fields['entrance'])
+
+    def clean(self):
+        cleaned = super().clean()
+        entrance = cleaned.get('entrance')
+        if entrance and duplicate_exists(
+            ParkingZone,
+            {'entrance': entrance},
+            self.instance,
+        ):
+            self.add_error('entrance', 'Для цього підʼїзду вже створена паркувальна зона.')
+        return cleaned
 
 
 class ParkingSpotForm(forms.ModelForm):
@@ -383,6 +498,13 @@ class ParkingSpotForm(forms.ModelForm):
             zone_complex_id = parking_zone.entrance.building.complex_id
             if not owner_matches_complex(owner, zone_complex_id):
                 self.add_error('owner', 'Власник має належати до того ж ЖК, що і паркомісце.')
+        number = cleaned.get('number')
+        if number is not None and parking_zone and duplicate_exists(
+            ParkingSpot,
+            {'parking_zone': parking_zone, 'number': number},
+            self.instance,
+        ):
+            self.add_error('number', 'Паркомісце з таким номером вже існує в цій паркувальній зоні.')
         return cleaned
 
 
@@ -407,6 +529,18 @@ class StorageRoomForm(forms.ModelForm):
             'status': 'Статус',
             'apartment': 'Квартира (необов’язково)',
         }
+
+
+    def clean(self):
+        cleaned = super().clean()
+        number = cleaned.get('number')
+        if number and duplicate_exists(
+            StorageRoom,
+            {'number': number},
+            self.instance,
+        ):
+            self.add_error('number', 'Комірка з таким номером вже існує.')
+        return cleaned
 
 
 class VisitorForm(forms.ModelForm):

@@ -4,6 +4,7 @@
 {% block content %}
 <h3>Власники</h3>
 
+{% if user.is_superuser %}
 <form method="get" id="filter-form" class="mb-3">
   <div class="row g-2 align-items-center">
       <div class="col-auto">
@@ -27,6 +28,7 @@ document.getElementById('id_complex_filter').addEventListener('change', function
     document.getElementById('filter-form').submit();
 });
 </script>
+{% endif %}
 
 <table class="table table-striped">
   <thead>
@@ -62,6 +64,9 @@ document.getElementById('id_complex_filter').addEventListener('change', function
 <h4>Додати власника</h4>
 <form method="post" class="card p-3">
   {% csrf_token %}
+  {% for hidden_field in form.hidden_fields %}
+    {{ hidden_field }}
+  {% endfor %}
   <div class="row g-2">
     <div class="col-md-4 d-flex flex-column">
       <label class="form-label" for="id_owner_name">ПІБ</label>
@@ -83,6 +88,7 @@ document.getElementById('id_complex_filter').addEventListener('change', function
       </div>
     </div>
 
+    {% if form.complex.field.widget.input_type != 'hidden' %}
     <div class="col-md-3 d-flex flex-column">
       <label class="form-label" for="id_owner_complex">ЖК</label>
       {{ form.complex }}
@@ -92,6 +98,7 @@ document.getElementById('id_complex_filter').addEventListener('change', function
         {% endif %}
       </div>
     </div>
+    {% endif %}
 
     <div class="col-md-1 pt-4">
       <button class="btn btn-success w-100" type="submit">Додати</button>

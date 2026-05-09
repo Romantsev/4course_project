@@ -3,6 +3,7 @@ from django.core import signing
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from accounts.utils import get_complex_for_admin, is_complex_admin, is_superadmin
@@ -190,7 +191,7 @@ def visitor_qr_validate(request):
                 'id': visitor.pk,
                 'fullname': visitor.fullname,
                 'purpose': visitor.purpose or '-',
-                'created_at': visitor.created_at.strftime('%Y-%m-%d %H:%M'),
+                'created_at': timezone.localtime(visitor.created_at).strftime('%Y-%m-%d %H:%M'),
                 'apartment': apartment_label,
                 'complex': complex_name,
                 'qr_url': request.build_absolute_uri(reverse('visitor_qr', args=[visitor.pk])),

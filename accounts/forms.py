@@ -24,6 +24,25 @@ class BaseUserCreateForm(forms.ModelForm):
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].label = "Логін"
+        self.fields['email'].label = "Email"
+        self.fields['username'].error_messages.update({
+            'required': "Вкажіть логін.",
+            'unique': "Користувач із таким логіном вже існує.",
+        })
+        self.fields['email'].error_messages.update({
+            'required': "Вкажіть email.",
+            'invalid': "Введіть коректну email-адресу.",
+        })
+        self.fields['password1'].error_messages.update({
+            'required': "Вкажіть пароль.",
+        })
+        self.fields['password2'].error_messages.update({
+            'required': "Підтвердіть пароль.",
+        })
+
     def clean(self):
         cleaned = super().clean()
         p1 = cleaned.get('password1')
@@ -108,6 +127,25 @@ class BaseUserUpdateForm(forms.ModelForm):
             'username': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].label = "Логін"
+        self.fields['email'].label = "Email"
+        self.fields['username'].error_messages.update({
+            'required': "Вкажіть логін.",
+            'unique': "Користувач із таким логіном вже існує.",
+        })
+        self.fields['email'].error_messages.update({
+            'required': "Вкажіть email.",
+            'invalid': "Введіть коректну email-адресу.",
+        })
+        self.fields['password1'].error_messages.update({
+            'required': "Вкажіть пароль.",
+        })
+        self.fields['password2'].error_messages.update({
+            'required': "Підтвердіть пароль.",
+        })
 
     def clean(self):
         cleaned = super().clean()

@@ -5,6 +5,7 @@
 <h3>Комірки</h3>
 
 <!-- Фільтр ЖК -->
+{% if user.is_superuser %}
 <form method="get" class="row mb-3">
     <div class="col-md-4">
         <label class="form-label">ЖК:</label>
@@ -18,6 +19,7 @@
         </select>
     </div>
 </form>
+{% endif %}
 
 <table class="table table-striped">
     <thead>

@@ -7,7 +7,7 @@
 {% block content %}
 <h3>Відвідувачі{% if complex %} — {{ complex.name }}{% endif %}</h3>
 
-{% if complexes %}
+{% if user.is_superuser and complexes %}
 <form method="get" id="filter-form" class="mb-3">
   <div class="row g-2 align-items-center">
     <div class="col-auto">

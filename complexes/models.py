@@ -15,6 +15,12 @@ class ResidentialComplex(models.Model):
         db_table = 'residential_complex'
         ordering = ['name']
         managed = False
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'address'],
+                name='uniq_residential_complex_name_address',
+            ),
+        ]
 
     def __str__(self):
         return self.name
@@ -35,6 +41,12 @@ class Building(models.Model):
         db_table = 'building'
         ordering = ['number']
         managed = False
+        constraints = [
+            models.UniqueConstraint(
+                fields=['complex', 'number'],
+                name='uniq_building_complex_number',
+            ),
+        ]
 
     def __str__(self):
         return f"Будинок {self.number} ({self.complex.name})"
@@ -54,6 +66,12 @@ class Entrance(models.Model):
         db_table = 'entrance'
         ordering = ['number']
         managed = False
+        constraints = [
+            models.UniqueConstraint(
+                fields=['building', 'number'],
+                name='uniq_entrance_building_number',
+            ),
+        ]
 
     def __str__(self):
         return f"Під'їзд {self.number}, буд. {self.building.number}"
@@ -76,6 +94,13 @@ class Owner(models.Model):
         db_table = 'owner'
         ordering = ['name']
         managed = False
+        constraints = [
+            models.UniqueConstraint(
+                fields=['complex', 'name', 'phone'],
+                name='uniq_owner_complex_name_phone',
+                nulls_distinct=False,
+            ),
+        ]
 
     def __str__(self):
         return self.name
@@ -106,6 +131,12 @@ class Apartment(models.Model):
         db_table = 'apartment'
         ordering = ['entrance', 'floor', 'number']
         managed = False
+        constraints = [
+            models.UniqueConstraint(
+                fields=['entrance', 'number'],
+                name='uniq_apartment_entrance_number',
+            ),
+        ]
 
     def __str__(self):
         return f"Кв. {self.number} ({self.entrance})"
@@ -130,6 +161,13 @@ class Resident(models.Model):
         db_table = 'resident'
         ordering = ['fullname']
         managed = False
+        constraints = [
+            models.UniqueConstraint(
+                fields=['apartment', 'fullname', 'contact'],
+                name='uniq_resident_apartment_fullname_contact',
+                nulls_distinct=False,
+            ),
+        ]
 
     def __str__(self):
         return self.fullname
@@ -152,6 +190,13 @@ class Staff(models.Model):
         db_table = 'staff'
         ordering = ['fullname']
         managed = False
+        constraints = [
+            models.UniqueConstraint(
+                fields=['complex', 'fullname', 'contact'],
+                name='uniq_staff_complex_fullname_contact',
+                nulls_distinct=False,
+            ),
+        ]
 
     def __str__(self):
         return self.fullname
@@ -171,6 +216,12 @@ class ParkingZone(models.Model):
     class Meta:
         db_table = 'parking_zone'
         managed = False
+        constraints = [
+            models.UniqueConstraint(
+                fields=['entrance'],
+                name='uniq_parking_zone_entrance',
+            ),
+        ]
 
     def __str__(self):
         return f"Паркінг зона {self.parking_zone_id} ({self.type})"
@@ -196,6 +247,12 @@ class ParkingSpot(models.Model):
     class Meta:
         db_table = 'parking_spot'
         managed = False
+        constraints = [
+            models.UniqueConstraint(
+                fields=['parking_zone', 'number'],
+                name='uniq_parking_spot_zone_number',
+            ),
+        ]
 
     def __str__(self):
         return f"Місце {self.number} ({self.parking_zone})"
@@ -223,6 +280,12 @@ class StorageRoom(models.Model):
     class Meta:
         db_table = 'storage_room'
         managed = False
+        constraints = [
+            models.UniqueConstraint(
+                fields=['number'],
+                name='uniq_storage_room_number',
+            ),
+        ]
 
     def __str__(self):
         base = f"Комірка {self.number}"
